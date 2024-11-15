@@ -1,4 +1,4 @@
-enum Shape {
+pub enum Shape {
     I,
     O,
     T,
@@ -19,13 +19,13 @@ pub struct Tetromino {
 impl Tetromino {
     pub fn new(shape: Shape) -> Self {
         let grid = match shape {
-            Shape::I => Vec![Vec![1, 1, 1, 1]],
-            Shape::O => Vec![Vec![1, 1], Vec![1, 1]],
-            Shape::T => Vec![Vec![0, 1, 0], Vec![1, 1, 1]],
-            Shape::S => Vec![Vec![0, 1, 1], Vec![1, 1]],
-            Shape::Z => Vec![Vec![1, 1], Vec![0, 1, 1]],
-            Shape::J => Vec![Vec![1], Vec![1, 1, 1]],
-            Shape::L => Vec![Vec![0, 0, 1], Vec![1, 1, 1]],
+            Shape::I => vec![vec![1, 1, 1, 1]],
+            Shape::O => vec![vec![1, 1], vec![1, 1]],
+            Shape::T => vec![vec![0, 1, 0], vec![1, 1, 1]],
+            Shape::S => vec![vec![0, 1, 1], vec![1, 1]],
+            Shape::Z => vec![vec![1, 1], vec![0, 1, 1]],
+            Shape::J => vec![vec![1], vec![1, 1, 1]],
+            Shape::L => vec![vec![0, 0, 1], vec![1, 1, 1]],
         };
 
         let color = match shape {
