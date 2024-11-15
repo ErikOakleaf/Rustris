@@ -52,8 +52,12 @@ impl Tetromino {
             grid,
             color,
             x, 
-            y: -2, 
+            y: 0, 
         }
+    }
+
+    pub fn fall(&mut self) {
+        self.y += 1;
     }
 }
 

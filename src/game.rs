@@ -2,7 +2,7 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use crate::tetrominos::{Tetromino, Bag};
 
 pub struct Game {
@@ -17,6 +17,7 @@ struct GameState {
     pub current_bag: Bag,
     pub next_bag: Bag,
     pub hold: Option<Tetromino>,
+    pub fall_timer: Instant,
 }
 
 impl Game {
@@ -47,6 +48,7 @@ impl Game {
                 current_bag: Bag::new(),
                 next_bag: Bag::new(),
                 hold: None,
+                fall_timer: Instant::now(),
             }
         })
     }
@@ -55,10 +57,21 @@ impl Game {
 				
 				let mut run: bool = true;
 				
+        let target_frame_duration = 1000 / 60;
+
         while run {
+            let frame_start_time = self.sdl_context.timer().unwrap().ticks();
+
             self.update(&mut run);
             self.render();
-            ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+
+            let frame_end_time = self.sdl_context.timer().unwrap().ticks();
+            let frame_duration = frame_end_time - frame_start_time;
+            let sleep_time = target_frame_duration - frame_duration;
+
+            if sleep_time > 0 {
+                ::std::thread::sleep(Duration::from_millis(sleep_time as u64));
+            }
         }
     }
 
@@ -91,8 +104,8 @@ impl Game {
             for (x, &cell) in row.iter().enumerate() {
                 if cell == 1 {
                     // Calculate the top left corner of the square
-                    let pos_x = current_tetromino.x  + (x as u32 * cell_size) as i32 + x_offset;
-                    let pos_y = current_tetromino.y  + (y as u32 * cell_size) as i32 + y_offset;
+                    let pos_x = (current_tetromino.x * cell_size as i32)  + (x as u32 * cell_size) as i32 + x_offset;
+                    let pos_y = (current_tetromino.y * cell_size as i32)  + (y as u32 * cell_size) as i32 + y_offset;
 
                     let rect: Rect = Rect::new(pos_x, pos_y, cell_size, cell_size);
 
@@ -120,6 +133,16 @@ impl Game {
                 }
             }
 
+            let current_tetromino = &mut self.state.current_bag.bag[0];
+            let level = 1; // TODO - placeholder level variable to be changed
+            let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0); //Formula
+            // calculate the time for the piece to dropped based on the level when this reaches
+            // TODO - level 115 or above this will start giving negative numbers so think about that
 
+            if self.state.fall_timer.elapsed() >= Duration::from_secs_f64(fall_seconds) {
+                current_tetromino.fall();
+                self.state.fall_timer = Instant::now(); 
+            }
+            
     }
 }
