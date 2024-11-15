@@ -1,7 +1,7 @@
-use game::Game;
-
-mod tetrominos;
 mod game;
+mod tetrominos;
+
+use game::Game;
 
 fn main() -> Result<(), String> {
     
