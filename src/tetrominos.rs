@@ -1,3 +1,7 @@
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use sdl2::pixels::Color;
+
 pub enum Shape {
     I,
     O,
@@ -11,9 +15,9 @@ pub enum Shape {
 pub struct Tetromino {
     pub shape: Shape,
     pub grid: Vec<Vec<u8>>,
-    pub color: [u8; 3],
-    pub x: u8,
-    pub y: u8,
+    pub color: Color, // change this to a sdl Color type 
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Tetromino {
@@ -29,13 +33,13 @@ impl Tetromino {
         };
 
         let color = match shape {
-            Shape::I => [0, 255, 255],
-            Shape::O => [255, 255, 0],
-            Shape::T => [128, 0, 128],
-            Shape::S => [0, 255, 0],
-            Shape::Z => [255, 0, 0],
-            Shape::J => [0, 0, 255],
-            Shape::L => [255, 127, 0],
+            Shape::I => Color::RGBA(0, 255, 255, 255),
+            Shape::O => Color::RGBA(255, 255, 0, 255),
+            Shape::T => Color::RGBA(128, 0, 128, 255),
+            Shape::S => Color::RGBA(0, 255, 0, 255),
+            Shape::Z => Color::RGBA(255, 0, 0, 255),
+            Shape::J => Color::RGBA(0, 0, 255, 255),
+            Shape::L => Color::RGBA(255, 127, 0, 255),
         };
 
         let x = match shape {
@@ -48,7 +52,34 @@ impl Tetromino {
             grid,
             color,
             x, 
-            y: 0, 
+            y: -2, 
         }
     }
-} 
+}
+
+pub struct Bag {
+    pub bag: Vec<Tetromino>,
+}
+
+impl Bag {
+    pub fn new() -> Self {
+        let mut shapes = vec![Shape::I, Shape::O, Shape::T, Shape::S, Shape::Z, Shape::J, Shape::L];
+        shapes.shuffle(&mut thread_rng());
+
+        let bag = shapes.into_iter().map(Tetromino::new).collect();
+
+        Bag {
+            bag,
+        }
+    }
+
+    pub fn erase(&mut self) -> Result<(), String> {
+        if self.bag.is_empty() {
+            Err("Tried to remove from empty vector".to_string())
+        }
+        else {
+            self.bag.remove(0);
+            Ok(())
+        }
+    }
+}
