@@ -38,12 +38,17 @@ impl Tetromino {
             Shape::L => [255, 127, 0],
         };
 
+        let x = match shape {
+            Shape::O => 4,
+            _ => 3,
+        };
+
         Tetromino {
             shape,
             grid,
             color,
-            x: 0, // TODO - change init position to be correct value
-            y: 0, // TODO - change init position to be correct value
+            x, 
+            y: 0, 
         }
     }
 } 
