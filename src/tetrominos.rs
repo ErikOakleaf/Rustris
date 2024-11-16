@@ -59,6 +59,23 @@ impl Tetromino {
     pub fn fall(&mut self) {
         self.y += 1;
     }
+
+    pub fn left(&mut self) {
+        if self.x > 0 {
+            self.x -= 1;
+        }
+    }
+
+    pub fn right(&mut self) {
+        let longest_length = self.grid.iter()
+            .map(|v| v.len())
+            .max()
+            .unwrap_or(0);
+
+        if self.x < 10 - longest_length as i32 {
+            self.x += 1;
+        }
+    }
 }
 
 pub struct Bag {

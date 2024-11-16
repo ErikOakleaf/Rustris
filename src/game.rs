@@ -129,6 +129,14 @@ impl Game {
                         let current_bag = &mut self.state.current_bag;
                         let _ = current_bag.erase();
                     }
+                    Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
+                        let current_tetromino = &mut self.state.current_bag.bag[0];
+                        current_tetromino.left();
+                    }
+                    Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
+                        let current_tetromino = &mut self.state.current_bag.bag[0];
+                        current_tetromino.right();
+                    }
                     _ => {}
                 }
             }
