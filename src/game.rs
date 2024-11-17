@@ -77,6 +77,7 @@ impl Game {
         let target_frame_duration = 1000 / 60;
 
         self.render_bg();
+        self.render_preview_tetrominos();
 
         while run {
             let frame_start_time = self.sdl_context.timer().unwrap().ticks();
@@ -153,6 +154,7 @@ impl Game {
                         if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
                             self.set_piece();
                             self.render_map();
+                            self.render_preview_tetrominos();
                             return;
                         }
                     }
@@ -279,7 +281,49 @@ impl Game {
         self.canvas.present();
     }
 
-    
+    fn render_preview_tetrominos (&mut self) {
+        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 + box_width as i32 + Self::CELL_SIZE as i32;
+        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+        
+        let preview_tetrominos: &Vec<Tetromino> = &self.state.bag.preview(5);
+
+        // clear the preview tetromino part of the screen before rendering the tetrominos
+
+        let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0 - 1, box_height);
+
+        self.canvas.set_draw_color(Self::BG_COLOR_1);
+        let _ = self.canvas.fill_rect(rect);
+
+
+        for tetromino in preview_tetrominos.iter() {
+            
+            // make the y offset grow for each iteration so that each preview get's rendered lower
+            // than the other
+            y_offset += (Self::CELL_SIZE * 3) as i32;
+
+            // render the preview tetrominos to the screen
+
+            self.canvas.set_draw_color(tetromino.color);
+            
+            for (y, row) in tetromino.grid.iter().enumerate() {
+                for (x, &cell) in row.iter().enumerate() {
+                    if cell == 1 {
+                        // Calculate the top left corner of the square
+                        let pos_x = (x as u32 * Self::CELL_SIZE) as i32 + x_offset;
+                        let pos_y = (y as u32 * Self::CELL_SIZE) as i32 + y_offset;
+
+                        let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
+
+                        let _ = self.canvas.fill_rect(rect);
+                    }
+                }
+            }
+
+        }
+
+    }
 
     
 }
