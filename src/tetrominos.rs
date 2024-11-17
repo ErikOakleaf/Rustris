@@ -1,7 +1,10 @@
+use std::collections::VecDeque;
+
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use sdl2::pixels::Color;
 
+#[derive(Clone)]
 pub enum Shape {
     I,
     O,
@@ -11,7 +14,7 @@ pub enum Shape {
     J,
     L 
 }
-
+#[derive(Clone)]
 pub struct Tetromino {
     pub shape: Shape,
     pub grid: Vec<Vec<u8>>,
@@ -79,28 +82,37 @@ impl Tetromino {
 }
 
 pub struct Bag {
-    pub bag: Vec<Tetromino>,
+    pub queue: VecDeque<Tetromino>,
 }
 
 impl Bag {
     pub fn new() -> Self {
-        let mut shapes = vec![Shape::I, Shape::O, Shape::T, Shape::S, Shape::Z, Shape::J, Shape::L];
-        shapes.shuffle(&mut thread_rng());
+        let mut bag = Self {
+            queue: VecDeque::new(),
+        };
 
-        let bag = shapes.into_iter().map(Tetromino::new).collect();
-
-        Bag {
-            bag,
-        }
+        bag.refill();
+        bag
     }
 
-    pub fn erase(&mut self) -> Result<(), String> {
-        if self.bag.is_empty() {
-            Err("Tried to remove from empty vector".to_string())
+    fn refill(&mut self) {
+        let mut shapes = vec![Shape::I, Shape::O, Shape::T, Shape::S, Shape::Z, Shape::J, Shape::L];
+        shapes.shuffle(&mut rand::thread_rng()); 
+        
+
+        self.queue.extend(shapes.into_iter().map(Tetromino::new));
+    }
+
+    pub fn next_tetromino(&mut self) -> Tetromino {
+        // Ensure there are always enough pieces in the queue
+        if self.queue.len() <= 7 {
+            self.refill();
         }
-        else {
-            self.bag.remove(0);
-            Ok(())
-        }
+       
+        self.queue.pop_front().unwrap()
+    }
+
+    pub fn preview(&self, count: usize) -> Vec<Tetromino> {
+        self.queue.iter().take(count).cloned().collect()
     }
 }
