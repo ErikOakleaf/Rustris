@@ -79,7 +79,7 @@ impl Game {
         let target_frame_duration = 1000 / 60;
 
         self.render_bg();
-        // self.render_preview_tetrominos();
+        self.render_preview_tetrominos();
 
         while run {
             let frame_start_time = self.sdl_context.timer().unwrap().ticks();
@@ -135,7 +135,7 @@ impl Game {
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position.clone();
 
-        let level = 4; // TODO - placeholder level variable to be changed
+        let level = 10; // TODO - placeholder level variable to be changed
         let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0); //Formula
         // calculate the time for the piece to dropped based on the level when this reaches
         // TODO - level 115 or above this will start giving negative numbers so think about that
@@ -181,7 +181,9 @@ impl Game {
         }
 
         self.state.current_tetromino = self.state.bag.next_tetromino();
-        
+
+        self.render_preview_tetrominos();
+        self.render_current_tetromino();
 
         self.state.fall_timer = Instant::now();
     }
@@ -274,43 +276,37 @@ impl Game {
     fn render_preview_tetrominos (&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 + box_width as i32 + Self::CELL_SIZE as i32;
-        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 + box_width as i32 + (Self::CELL_SIZE * 2) as i32;
+        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
         
         let preview_tetrominos: &Vec<Tetromino> = &self.state.bag.preview(5);
 
         // clear the preview tetromino part of the screen before rendering the tetrominos
 
-        let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0 - 1, box_height);
+        let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0, box_height);
 
         self.canvas.set_draw_color(Self::BG_COLOR_1);
         let _ = self.canvas.fill_rect(rect);
 
+        // render the preview tetrominos to the screen
 
         for tetromino in preview_tetrominos.iter() {
             
+            
+            self.canvas.set_draw_color(tetromino.color);
+            
+            for point in tetromino.grid.iter() {
+                let pos_x = (point[0]) * Self::CELL_SIZE as i32 + x_offset;
+                let pos_y = (point[1]) * Self::CELL_SIZE as i32 + y_offset;
+
+                let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
+
+                let _ = self.canvas.fill_rect(rect);
+            }
+
             // make the y offset grow for each iteration so that each preview get's rendered lower
             // than the other
             y_offset += (Self::CELL_SIZE * 3) as i32;
-
-            // render the preview tetrominos to the screen
-
-            self.canvas.set_draw_color(tetromino.color);
-            
-            for (y, row) in tetromino.grid.iter().enumerate() {
-                for (x, &cell) in row.iter().enumerate() {
-                    if cell == 1 {
-                        // Calculate the top left corner of the square
-                        let pos_x = (x as u32 * Self::CELL_SIZE) as i32 + x_offset;
-                        let pos_y = (y as u32 * Self::CELL_SIZE) as i32 + y_offset;
-
-                        let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
-
-                        let _ = self.canvas.fill_rect(rect);
-                    }
-                }
-            }
-
         }
 
     }
