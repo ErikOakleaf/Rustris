@@ -17,22 +17,23 @@ pub enum Shape {
 #[derive(Clone)]
 pub struct Tetromino {
     pub shape: Shape,
-    pub grid: Vec<Vec<u8>>,
-    pub color: Color, // change this to a sdl Color type 
-    pub x: i32,
-    pub y: i32,
+    pub grid: Vec<[i32; 2]>,
+    pub color: Color, 
+    pub position: [i32; 2], // position x y in array with two slots 
+    pub pivot: usize, // the index that is the pivot in the array of points TODO - this could
+                      // probably be removed later
 }
 
 impl Tetromino {
     pub fn new(shape: Shape) -> Self {
         let grid = match shape {
-            Shape::I => vec![vec![1, 1, 1, 1]],
-            Shape::O => vec![vec![1, 1], vec![1, 1]],
-            Shape::T => vec![vec![0, 1, 0], vec![1, 1, 1]],
-            Shape::S => vec![vec![0, 1, 1], vec![1, 1]],
-            Shape::Z => vec![vec![1, 1], vec![0, 1, 1]],
-            Shape::J => vec![vec![1], vec![1, 1, 1]],
-            Shape::L => vec![vec![0, 0, 1], vec![1, 1, 1]],
+            Shape::I => vec![[0, 0], [1, 0], [2, 0], [3, 0]],
+            Shape::O => vec![[0, 0], [1, 0], [0, 1], [1, 1]],
+            Shape::T => vec![[0, 1], [1, 1], [2, 1], [1, 0]],
+            Shape::S => vec![[1, 0], [2, 0], [0, 1], [1, 1]],
+            Shape::Z => vec![[0, 0], [1, 0], [1, 1], [2, 1]],
+            Shape::J => vec![[0, 0], [0, 1], [1, 1], [2, 1]],
+            Shape::L => vec![[0, 1], [1, 1], [2, 1], [2, 0]],
         };
 
         let color = match shape {
@@ -45,6 +46,16 @@ impl Tetromino {
             Shape::L => Color::RGBA(255, 127, 0, 255),
         };
 
+        let pivot = match shape {
+            Shape::I => 1,
+            Shape::O => 2,
+            Shape::T => 2,
+            Shape::S => 3,
+            Shape::Z => 2,
+            Shape::J => 1,
+            Shape::L => 1,
+        };
+
         let x = match shape {
             Shape::O => 4,
             _ => 3,
@@ -54,18 +65,18 @@ impl Tetromino {
             shape,
             grid,
             color,
-            x, 
-            y: 0, 
+            position: [x, 0], 
+            pivot,
         }
     }
 
     pub fn fall(&mut self) {
-        self.y += 1;
+        self.position[1] += 1;
     }
 
     pub fn left(&mut self) {
-        if self.x > 0 {
-            self.x -= 1;
+        if self.position[0] > 0 {
+            self.position[0] -= 1;
         }
     }
 
@@ -75,8 +86,8 @@ impl Tetromino {
             .max()
             .unwrap_or(0);
 
-        if self.x < 10 - longest_length as i32 {
-            self.x += 1;
+        if self.position[0] < 10 - longest_length as i32 {
+            self.position[0] += 1;
         }
     }
 }
