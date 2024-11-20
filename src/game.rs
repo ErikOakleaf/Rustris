@@ -123,6 +123,11 @@ impl Game {
                     current_tetromino.right();
                     moved = true;
                 }
+                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                    let current_tetromino = &mut self.state.current_tetromino;
+                    current_tetromino.rotate();
+                    moved = true;
+                }
                 _ => {}
             }
         }
@@ -135,7 +140,7 @@ impl Game {
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position.clone();
 
-        let level = 10; // TODO - placeholder level variable to be changed
+        let level = 3; // TODO - placeholder level variable to be changed
         let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0); //Formula
         // calculate the time for the piece to dropped based on the level when this reaches
         // TODO - level 115 or above this will start giving negative numbers so think about that

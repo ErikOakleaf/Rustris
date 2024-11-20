@@ -49,10 +49,10 @@ impl Tetromino {
         let pivot = match shape {
             Shape::I => 1,
             Shape::O => 2,
-            Shape::T => 2,
+            Shape::T => 1,
             Shape::S => 3,
             Shape::Z => 2,
-            Shape::J => 1,
+            Shape::J => 2,
             Shape::L => 1,
         };
 
@@ -88,6 +88,33 @@ impl Tetromino {
 
         if self.position[0] < 10 - longest_length as i32 {
             self.position[0] += 1;
+        }
+    }
+
+    pub fn rotate(&mut self) {
+        match self.shape {
+            Shape::O => return,
+            _ => {
+                let pivot = self.grid[self.pivot];
+
+                let rotated_points: Vec<[i32; 2]> = self.grid.iter().map(|point| {
+                    let relative_x = point[0] - pivot[0];
+                    let relative_y = point[1] - pivot[1];
+
+                    let rotated_x = -relative_y;
+                    let rotated_y = relative_x;
+
+                    [rotated_x + pivot[0], rotated_y + pivot[1]]
+                }).collect();
+
+            let new_pivot_index = rotated_points.iter()
+               .position(|&p| p == pivot)
+               .unwrap_or(self.pivot);
+
+            self.pivot = new_pivot_index;
+            self.grid = rotated_points;
+
+            }
         }
     }
 }
