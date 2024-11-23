@@ -125,7 +125,7 @@ impl Game {
                 }
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
                     let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.rotate();
+                    current_tetromino.rotate(true);
                     moved = true;
                 }
                 _ => {}

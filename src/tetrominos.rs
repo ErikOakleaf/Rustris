@@ -20,8 +20,8 @@ pub struct Tetromino {
     pub grid: Vec<[i32; 2]>,
     pub color: Color, 
     pub position: [i32; 2], // position x y in array with two slots 
-    pub pivot: usize, // the index that is the pivot in the array of points TODO - this could
-                      // probably be removed later
+    pub pivot: usize, 
+    pub rotation: i8,
 }
 
 impl Tetromino {
@@ -67,6 +67,7 @@ impl Tetromino {
             color,
             position: [x, 0], 
             pivot,
+            rotation: 0,
         }
     }
 
@@ -75,23 +76,27 @@ impl Tetromino {
     }
 
     pub fn left(&mut self) {
-        if self.position[0] > 0 {
-            self.position[0] -= 1;
-        }
+    let min_x_point = self.grid.iter()
+        .map(|arr| arr[0])
+        .min()
+        .unwrap();
+    
+    if self.position[0] + min_x_point > 0 {
+        self.position[0] -= 1;
     }
+}
 
     pub fn right(&mut self) {
-        let longest_length = self.grid.iter()
-            .map(|v| v.len())
-            .max()
-            .unwrap_or(0);
-
-        if self.position[0] < 10 - longest_length as i32 {
-            self.position[0] += 1;
-        }
+    let max_x_point = self.grid.iter()
+        .map(|arr| arr[0])
+        .max()
+        .unwrap();
+    
+    if self.position[0] + max_x_point < 9 {
+        self.position[0] += 1;
     }
-
-    pub fn rotate(&mut self) {
+}
+    pub fn rotate(&mut self, clockwise: bool) {
         match self.shape {
             Shape::O => return,
             _ => {
@@ -101,23 +106,29 @@ impl Tetromino {
                     let relative_x = point[0] - pivot[0];
                     let relative_y = point[1] - pivot[1];
 
-                    let rotated_x = -relative_y;
-                    let rotated_y = relative_x;
+                    let (rotated_x, rotated_y) = if clockwise {
+                        (-relative_y, relative_x)
+                    } else {
+                        (relative_y, -relative_x)
+                    };
 
                     [rotated_x + pivot[0], rotated_y + pivot[1]]
                 }).collect();
 
-            let new_pivot_index = rotated_points.iter()
-               .position(|&p| p == pivot)
-               .unwrap_or(self.pivot);
+                let new_pivot_index = rotated_points.iter()
+                   .position(|&p| p == pivot)
+                   .unwrap_or(self.pivot);
 
-            self.pivot = new_pivot_index;
-            self.grid = rotated_points;
+                self.pivot = new_pivot_index;
+                self.grid = rotated_points;
 
+                self.rotation = match clockwise {
+                    true => (self.rotation + 1) % 3,
+                    false => (self.rotation - 1 + 3) % 3
+                };
             }
         }
-    }
-}
+    }}
 
 pub struct Bag {
     pub queue: VecDeque<Tetromino>,
