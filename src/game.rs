@@ -2,8 +2,9 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
-use std::time::{Duration, Instant};
+use std::{time::{Duration, Instant}, usize};
 use crate::tetrominos::{Tetromino, Bag};
+use crate::utilities::Cell;
 
 pub struct Game {
     sdl_context: sdl2::Sdl, 
@@ -15,16 +16,10 @@ pub struct Game {
 struct GameState {
     pub map: [[Cell; 10]; 20],
     pub bag: Bag,
-    pub current_tetromino: (Tetromino, [i32; 2]), //stores the tetromino and it's last position to
-                                                   //clear it from the screen
+    pub current_tetromino: Tetromino, //stores the tetromino and it's last position to
+    pub previous_position: (Vec<[i32; 2]>, [i32; 2]),               //clear it from the screen
     pub hold: Option<Tetromino>,
     pub fall_timer: Instant,
-}
-
-#[derive(Clone, Copy)]
-struct Cell {
-    color: Option<Color>,
-    occupied: bool,
 }
 
 impl Game {
@@ -54,7 +49,8 @@ impl Game {
         let event_pump = sdl_context.event_pump()?;
         let map = [[Cell { color: None, occupied: false, }; 10]; 20];
         let mut bag = Bag::new();
-        let current_tetromino = (bag.next_tetromino(), [0, 0]);
+        let current_tetromino = bag.next_tetromino();
+        let previous_position = (vec![[0, 0]], [0, 0]);
 
         Ok(Game {
             sdl_context,
@@ -64,6 +60,7 @@ impl Game {
                 map,
                 bag, 
                 current_tetromino,
+                previous_position,
                 hold: None,
                 fall_timer: Instant::now(),
             }
@@ -97,7 +94,8 @@ impl Game {
     fn update(&mut self, run: &mut bool) {
 
         // set the previous position of the current tetromino
-        self.state.current_tetromino.1 = [self.state.current_tetromino.0.x, self.state.current_tetromino.0.y];
+        self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
+        self.state.previous_position.1 = self.state.current_tetromino.position;
 
         let mut moved: bool = false;
 
@@ -107,14 +105,22 @@ impl Game {
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     *run = false;
                 },
+                Event::KeyDown { keycode: Some(Keycode::A), ..} => {
+                    self.state.current_tetromino = self.state.bag.next_tetromino();
+                }
                 Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
-                    let current_tetromino = &mut self.state.current_tetromino.0;
+                    let current_tetromino = &mut self.state.current_tetromino;
                     current_tetromino.left();
                     moved = true;
                 }
                 Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
-                    let current_tetromino = &mut self.state.current_tetromino.0;
+                    let current_tetromino = &mut self.state.current_tetromino;
                     current_tetromino.right();
+                    moved = true;
+                }
+                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                    let current_tetromino = &mut self.state.current_tetromino;
+                    current_tetromino.srs_rotate(true, &self.state.map);
                     moved = true;
                 }
                 _ => {}
@@ -126,9 +132,10 @@ impl Game {
         }
 
         // set the previous position of the current tetromino
-        self.state.current_tetromino.1 = [self.state.current_tetromino.0.x, self.state.current_tetromino.0.y];
+        self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
+        self.state.previous_position.1 = self.state.current_tetromino.position;
 
-        let level = 10; // TODO - placeholder level variable to be changed
+        let level = 3; // TODO - placeholder level variable to be changed
         let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0); //Formula
         // calculate the time for the piece to dropped based on the level when this reaches
         // TODO - level 115 or above this will start giving negative numbers so think about that
@@ -139,26 +146,20 @@ impl Game {
             // check if the cell below is occupied or is below the floor of the map
 
 
-            let current_tetromino = &mut self.state.current_tetromino.0;
+            let current_tetromino = &mut self.state.current_tetromino;
      
-            
-            for (y, row) in current_tetromino.grid.iter().enumerate() {
-                for (x, &cell) in row.iter().enumerate() {
-                    if cell == 1 {
-                        // calculate the cell position
+            for point in current_tetromino.grid.iter() {
+                let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
+                let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
 
-                        let pos_x: usize = current_tetromino.x as usize + x;
-                        let pos_y: usize = current_tetromino.y as usize + y;
-                        let map = &self.state.map;
+                let map = &self.state.map;
 
-                        if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
-                            self.set_piece();
-                            self.render_map();
-                            self.render_preview_tetrominos();
-                            return;
-                        }
-                    }
+                if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
+                    self.set_piece();
+                    self.render_map();
+                    return;
                 }
+
             }
 
             current_tetromino.fall();
@@ -169,24 +170,25 @@ impl Game {
     }
 
     fn set_piece(&mut self) {
-        let current_tetromino = &self.state.current_tetromino.0;
+    
+           
+        
 
-        for (y, row) in current_tetromino.grid.iter().enumerate(){
-            for (x, &cell) in row.iter().enumerate() {
-                if cell == 1 {
-                    // calculate position
-                    let pos_x: usize = current_tetromino.x as usize + x;
-                    let pos_y: usize = current_tetromino.y as usize + y;
 
-                    let map = &mut self.state.map;
-                    map[pos_y][pos_x] = Cell { color: Some(current_tetromino.color), occupied: true};
-                }
-            }
+        let current_tetromino = &self.state.current_tetromino;
+
+        for point in current_tetromino.grid.iter() {
+            let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
+            let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
+            
+            let map = &mut self.state.map;
+            map[pos_y][pos_x] = Cell { color: Some(current_tetromino.color), occupied: true};
         }
-        
 
-        self.state.current_tetromino.0 = self.state.bag.next_tetromino();
-        
+        self.state.current_tetromino = self.state.bag.next_tetromino();
+
+        self.render_preview_tetrominos();
+        self.render_current_tetromino();
 
         self.state.fall_timer = Instant::now();
     }
@@ -216,14 +218,15 @@ impl Game {
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
-        let current_tetromino = &mut self.state.current_tetromino.0;
+        let map = &self.state.map;
 
-        for (y, row) in current_tetromino.grid.iter().enumerate() {
-            for (x, &cell) in row.iter().enumerate() {
-                if cell == 1 {
-                    // Calculate the top left corner of the square
-                    let pos_x = (current_tetromino.x * Self::CELL_SIZE as i32)  + (x as u32 * Self::CELL_SIZE) as i32 + x_offset;
-                    let pos_y = (current_tetromino.y * Self::CELL_SIZE as i32)  + (y as u32 * Self::CELL_SIZE) as i32 + y_offset;
+        for (y, row) in map.iter().enumerate() {
+            for(x, &cell) in row.iter().enumerate() {
+                if cell.occupied {
+                    self.canvas.set_draw_color(cell.color.unwrap());
+
+                    let pos_x: i32 = x as i32 * Self::CELL_SIZE as i32 + x_offset;
+                    let pos_y: i32 = y as i32 * Self::CELL_SIZE as i32 + y_offset;
 
                     let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
 
@@ -231,7 +234,6 @@ impl Game {
                 }
             }
         }
-
         self.canvas.present();
     }
 
@@ -241,41 +243,36 @@ impl Game {
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
         
-        let current_tetromino = &self.state.current_tetromino.0;
-        let previous_position = &self.state.current_tetromino.1;
+        let current_tetromino = &self.state.current_tetromino;
+        let previous_position = &self.state.previous_position;
 
-        // clear the previous position of the tetromino on the screen
-
+        // clear the screen of previous position where the tetromino was
+        
         self.canvas.set_draw_color(Self::BG_COLOR_2);
 
-        for (y, row) in current_tetromino.grid.iter().enumerate() {
-            for (x, &cell) in row.iter().enumerate() {
-                if cell == 1 {
-                    // Calculate the top left corner of the square
-                    let pos_x = (previous_position[0] * Self::CELL_SIZE as i32)  + (x as u32 * Self::CELL_SIZE) as i32 + x_offset;
-                    let pos_y = (previous_position[1] * Self::CELL_SIZE as i32)  + (y as u32 * Self::CELL_SIZE) as i32 + y_offset;
+        for point in previous_position.0.iter() {
+            let pos_x = (point[0] + previous_position.1[0]) * Self::CELL_SIZE as i32 + x_offset;
+            let pos_y = (point[1] + previous_position.1[1]) * Self::CELL_SIZE as i32 + y_offset;
 
-                    let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
 
-                    let _ = self.canvas.fill_rect(rect);
-                }
-            }
+            let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
+
+            let _ = self.canvas.fill_rect(rect);
+
         }
+
+        // render the current tetromino 
 
         self.canvas.set_draw_color(current_tetromino.color);
 
-        for (y, row) in current_tetromino.grid.iter().enumerate() {
-            for (x, &cell) in row.iter().enumerate() {
-                if cell == 1 {
-                    // Calculate the top left corner of the square
-                    let pos_x = (current_tetromino.x * Self::CELL_SIZE as i32)  + (x as u32 * Self::CELL_SIZE) as i32 + x_offset;
-                    let pos_y = (current_tetromino.y * Self::CELL_SIZE as i32)  + (y as u32 * Self::CELL_SIZE) as i32 + y_offset;
+        for point in current_tetromino.grid.iter() {
+            let pos_x = (point[0] + current_tetromino.position[0]) * Self::CELL_SIZE as i32 + x_offset;
+            let pos_y = (point[1] + current_tetromino.position[1]) * Self::CELL_SIZE as i32 + y_offset;
 
-                    let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
 
-                    let _ = self.canvas.fill_rect(rect);
-                }
-            }
+            let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
+
+            let _ = self.canvas.fill_rect(rect);
         }
 
         self.canvas.present();
@@ -284,43 +281,37 @@ impl Game {
     fn render_preview_tetrominos (&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 + box_width as i32 + Self::CELL_SIZE as i32;
-        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 + box_width as i32 + (Self::CELL_SIZE * 2) as i32;
+        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
         
         let preview_tetrominos: &Vec<Tetromino> = &self.state.bag.preview(5);
 
         // clear the preview tetromino part of the screen before rendering the tetrominos
 
-        let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0 - 1, box_height);
+        let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0, box_height);
 
         self.canvas.set_draw_color(Self::BG_COLOR_1);
         let _ = self.canvas.fill_rect(rect);
 
+        // render the preview tetrominos to the screen
 
         for tetromino in preview_tetrominos.iter() {
             
+            
+            self.canvas.set_draw_color(tetromino.color);
+            
+            for point in tetromino.grid.iter() {
+                let pos_x = (point[0]) * Self::CELL_SIZE as i32 + x_offset;
+                let pos_y = (point[1]) * Self::CELL_SIZE as i32 + y_offset;
+
+                let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
+
+                let _ = self.canvas.fill_rect(rect);
+            }
+
             // make the y offset grow for each iteration so that each preview get's rendered lower
             // than the other
             y_offset += (Self::CELL_SIZE * 3) as i32;
-
-            // render the preview tetrominos to the screen
-
-            self.canvas.set_draw_color(tetromino.color);
-            
-            for (y, row) in tetromino.grid.iter().enumerate() {
-                for (x, &cell) in row.iter().enumerate() {
-                    if cell == 1 {
-                        // Calculate the top left corner of the square
-                        let pos_x = (x as u32 * Self::CELL_SIZE) as i32 + x_offset;
-                        let pos_y = (y as u32 * Self::CELL_SIZE) as i32 + y_offset;
-
-                        let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
-
-                        let _ = self.canvas.fill_rect(rect);
-                    }
-                }
-            }
-
         }
 
     }
