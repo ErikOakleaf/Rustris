@@ -4,6 +4,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use std::{time::{Duration, Instant}, usize};
 use crate::tetrominos::{Tetromino, Bag};
+use crate::utilities::Cell;
 
 pub struct Game {
     sdl_context: sdl2::Sdl, 
@@ -19,12 +20,6 @@ struct GameState {
     pub previous_position: (Vec<[i32; 2]>, [i32; 2]),               //clear it from the screen
     pub hold: Option<Tetromino>,
     pub fall_timer: Instant,
-}
-
-#[derive(Clone, Copy)]
-struct Cell {
-    color: Option<Color>,
-    occupied: bool,
 }
 
 impl Game {
@@ -100,7 +95,7 @@ impl Game {
 
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
-        self.state.previous_position.1 = self.state.current_tetromino.position.clone();
+        self.state.previous_position.1 = self.state.current_tetromino.position;
 
         let mut moved: bool = false;
 
@@ -125,7 +120,7 @@ impl Game {
                 }
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
                     let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.rotate(true);
+                    current_tetromino.srs_rotate(true, &self.state.map);
                     moved = true;
                 }
                 _ => {}
@@ -138,7 +133,7 @@ impl Game {
 
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
-        self.state.previous_position.1 = self.state.current_tetromino.position.clone();
+        self.state.previous_position.1 = self.state.current_tetromino.position;
 
         let level = 3; // TODO - placeholder level variable to be changed
         let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0); //Formula
@@ -175,6 +170,11 @@ impl Game {
     }
 
     fn set_piece(&mut self) {
+    
+           
+        
+
+
         let current_tetromino = &self.state.current_tetromino;
 
         for point in current_tetromino.grid.iter() {

@@ -1,8 +1,9 @@
 use std::collections::VecDeque;
-
+use std::collections::HashMap;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use sdl2::pixels::Color;
+use crate::utilities::{Cell, has_colided};
 
 #[derive(Clone)]
 pub enum Shape {
@@ -87,18 +88,19 @@ impl Tetromino {
 }
 
     pub fn right(&mut self) {
-    let max_x_point = self.grid.iter()
-        .map(|arr| arr[0])
-        .max()
-        .unwrap();
-    
-    if self.position[0] + max_x_point < 9 {
-        self.position[0] += 1;
+        let max_x_point = self.grid.iter()
+            .map(|arr| arr[0])
+            .max()
+            .unwrap();
+        
+        if self.position[0] + max_x_point < 9 {
+            self.position[0] += 1;
+        }
     }
-}
-    pub fn rotate(&mut self, clockwise: bool) {
+
+    fn rotate(&mut self, clockwise: bool/*, map: [[Cell; 10]; 20]*/) -> Tetromino {
         match self.shape {
-            Shape::O => return,
+            Shape::O => self.clone(),
             _ => {
                 let pivot = self.grid[self.pivot];
 
@@ -119,16 +121,88 @@ impl Tetromino {
                    .position(|&p| p == pivot)
                    .unwrap_or(self.pivot);
 
-                self.pivot = new_pivot_index;
-                self.grid = rotated_points;
-
-                self.rotation = match clockwise {
-                    true => (self.rotation + 1) % 3,
-                    false => (self.rotation - 1 + 3) % 3
+                let mut result: Tetromino = Self::new(self.shape.clone());
+                result.pivot = new_pivot_index;
+                result.grid = rotated_points;
+                result.rotation = match clockwise {
+                    true => (self.rotation + 1) % 4,
+                    false => (self.rotation - 1 + 3) % 4
                 };
+                result.position = self.position;
+
+                result
             }
         }
-    }}
+    }
+    
+    pub fn srs_rotate(&mut self, clockwise: bool, map: &[[Cell; 10]; 20]) {
+        let wall_kicks: HashMap<(i8, i8), Vec<(i32, i32)>> = HashMap::from([
+            ((0, 1), vec![(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)]),
+            ((1, 0), vec![(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)]),
+            ((1, 2), vec![(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)]),
+            ((2, 1), vec![(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)]),
+            ((2, 3), vec![(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)]),
+            ((3, 2), vec![(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)]),
+            ((3, 0), vec![(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)]),
+            ((0, 3), vec![(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)])
+        ]); // TODO-Declare these in another place so they don't always get declared in the
+            // function.
+
+        let wall_kicks_i: HashMap<(i8, i8), Vec<(i32, i32)>> = HashMap::from([
+            ((0, 1), vec![(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)]),
+            ((1, 0), vec![(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)]),
+            ((1, 2), vec![(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)]),
+            ((2, 1), vec![(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)]),
+            ((2, 3), vec![(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)]),
+            ((3, 2), vec![(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)]),
+            ((3, 0), vec![(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)]),
+            ((0, 3), vec![(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)])
+        ]);
+
+
+        let rotation_state = self.get_rotation_state(clockwise);        
+        let mut rotated = self.rotate(clockwise);
+        
+       
+        let tests = match self.shape {
+            Shape::I => wall_kicks_i.get(&rotation_state).unwrap(),
+            _ => wall_kicks.get(&rotation_state).unwrap(),
+        };
+
+        let mut test_success: bool = false;
+
+        for test in tests.iter() {
+             let pos_x = rotated.position[0] + test.0;
+             let pos_y = rotated.position[1] + test.1;
+
+             if has_colided(&rotated.grid, &(pos_x, pos_y), map) {
+                 continue;
+             }
+
+             rotated.position = [pos_x, pos_y];
+             test_success = true;
+             break;
+        }
+
+        if test_success {
+            self.grid = rotated.grid;
+            self.position = rotated.position;
+            self.pivot = rotated.pivot;
+            self.rotation = rotated.rotation;
+        }
+        
+    }
+    
+    fn get_rotation_state(&self, clockwise: bool) -> (i8, i8) {
+        let current = self.rotation;
+        let next = if clockwise {
+            (current + 1) % 4
+        } else {
+            (current + 3) % 4 
+        };
+        (current, next)
+    }
+}
 
 pub struct Bag {
     pub queue: VecDeque<Tetromino>,

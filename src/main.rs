@@ -1,5 +1,6 @@
 mod game;
 mod tetrominos;
+mod utilities;
 
 use game::Game;
 
