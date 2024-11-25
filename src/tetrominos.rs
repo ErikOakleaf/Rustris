@@ -57,16 +57,12 @@ impl Tetromino {
             Shape::L => 1,
         };
 
-        let x = match shape {
-            Shape::O => 4,
-            _ => 3,
-        };
 
         Tetromino {
             shape,
             grid,
             color,
-            position: [x, 0], 
+            position: [0, 0], 
             pivot,
             rotation: 0,
         }

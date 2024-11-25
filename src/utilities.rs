@@ -1,5 +1,5 @@
 use sdl2::pixels::Color;
-//use crate::tetrominos::{Tetromino};
+use crate::tetrominos::Tetromino;
 
 #[derive(Clone, Copy)]
 pub struct Cell {
@@ -23,3 +23,20 @@ pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10
     false
 }
 
+pub fn lowest_avaliable_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> Tetromino {
+
+    let mut result = Tetromino::new(current_tetromino.shape.clone());
+    result.position = current_tetromino.position;
+
+
+    while result.position[1] < 19 {
+
+        if has_colided(&result.grid, &(result.position[0], result.position[1]), map) {
+            break;
+        }
+
+        result.position[1] += 1;
+    }
+
+    result
+}

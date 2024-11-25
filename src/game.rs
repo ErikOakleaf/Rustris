@@ -4,7 +4,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use std::{time::{Duration, Instant}, usize};
 use crate::tetrominos::{Tetromino, Bag};
-use crate::utilities::Cell;
+use crate::utilities::{Cell, lowest_avaliable_position};
 
 pub struct Game {
     sdl_context: sdl2::Sdl, 
@@ -170,11 +170,6 @@ impl Game {
     }
 
     fn set_piece(&mut self) {
-    
-           
-        
-
-
         let current_tetromino = &self.state.current_tetromino;
 
         for point in current_tetromino.grid.iter() {
@@ -237,37 +232,17 @@ impl Game {
         self.canvas.present();
     }
 
-    fn render_current_tetromino(&mut self) {
-        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
-        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
-        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+    fn render_tetromino(&mut self, tetromino: &Tetromino, x_offset: i32, y_offset: i32, clear: bool){ 
+        //draw the tetromino on the screen
         
-        let current_tetromino = &self.state.current_tetromino;
-        let previous_position = &self.state.previous_position;
-
-        // clear the screen of previous position where the tetromino was
-        
-        self.canvas.set_draw_color(Self::BG_COLOR_2);
-
-        for point in previous_position.0.iter() {
-            let pos_x = (point[0] + previous_position.1[0]) * Self::CELL_SIZE as i32 + x_offset;
-            let pos_y = (point[1] + previous_position.1[1]) * Self::CELL_SIZE as i32 + y_offset;
-
-
-            let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
-
-            let _ = self.canvas.fill_rect(rect);
-
+        match clear {
+            true => self.canvas.set_draw_color(Self::BG_COLOR_2),
+            _ => self.canvas.set_draw_color(tetromino.color),
         }
-
-        // render the current tetromino 
-
-        self.canvas.set_draw_color(current_tetromino.color);
-
-        for point in current_tetromino.grid.iter() {
-            let pos_x = (point[0] + current_tetromino.position[0]) * Self::CELL_SIZE as i32 + x_offset;
-            let pos_y = (point[1] + current_tetromino.position[1]) * Self::CELL_SIZE as i32 + y_offset;
+        
+        for point in tetromino.grid.iter() {
+            let pos_x = (point[0] + tetromino.position[0]) * Self::CELL_SIZE as i32 + x_offset;
+            let pos_y = (point[1] + tetromino.position[1]) * Self::CELL_SIZE as i32 + y_offset;
 
 
             let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
@@ -276,6 +251,57 @@ impl Game {
         }
 
         self.canvas.present();
+    }   
+
+    fn render_current_tetromino(&mut self) {
+        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+
+        let current_tetromino = self.state.current_tetromino.clone();
+        let previous_grid = self.state.previous_position.0.clone();
+        let previous_position = self.state.previous_position.1;
+
+        let mut previous_tetromino = Tetromino::new(current_tetromino.shape.clone());
+        previous_tetromino.grid = previous_grid;
+        previous_tetromino.position = previous_position;
+        
+        // clear the screen of previous position where the tetromino was
+        
+        self.render_tetromino(&previous_tetromino, x_offset, y_offset, true);
+
+        // render the current tetromino 
+
+        self.render_tetromino(&current_tetromino, x_offset, y_offset, false);
+    }
+
+    fn render_lowest_avaliable_tetromino(&mut self) {
+        let render_tetromino = lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
+
+        println!("{0}", render_tetromino.position[1]);
+
+        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+               
+        let mut render_color = render_tetromino.color;
+        render_color.a = 100;
+        self.canvas.set_draw_color(render_color);
+
+        for point in render_tetromino.grid.iter() {
+            let pos_x = (point[0] + render_tetromino.position[0]) * Self::CELL_SIZE as i32 + x_offset;
+            let pos_y = (point[1] + render_tetromino.position[1]) * Self::CELL_SIZE as i32 + y_offset;
+
+
+            let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
+
+            let _ = self.canvas.fill_rect(rect);
+        }
+
+        self.canvas.present();
+        
     }
 
     fn render_preview_tetrominos (&mut self) {
@@ -297,17 +323,7 @@ impl Game {
 
         for tetromino in preview_tetrominos.iter() {
             
-            
-            self.canvas.set_draw_color(tetromino.color);
-            
-            for point in tetromino.grid.iter() {
-                let pos_x = (point[0]) * Self::CELL_SIZE as i32 + x_offset;
-                let pos_y = (point[1]) * Self::CELL_SIZE as i32 + y_offset;
-
-                let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
-
-                let _ = self.canvas.fill_rect(rect);
-            }
+            self.render_tetromino(tetromino, x_offset, y_offset, false);
 
             // make the y offset grow for each iteration so that each preview get's rendered lower
             // than the other
@@ -315,6 +331,4 @@ impl Game {
         }
 
     }
-
-    
 }
