@@ -110,12 +110,12 @@ impl Game {
                 }
                 Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
                     let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.left();
+                    current_tetromino.left(&self.state.map);
                     moved = true;
                 }
                 Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
                     let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.right();
+                    current_tetromino.right(&self.state.map);
                     moved = true;
                 }
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {

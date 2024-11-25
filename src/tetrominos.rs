@@ -76,29 +76,25 @@ impl Tetromino {
         self.position[1] += 1;
     }
 
-    pub fn left(&mut self) {
-    let min_x_point = self.grid.iter()
-        .map(|arr| arr[0])
-        .min()
-        .unwrap();
+    pub fn left(&mut self, map: &[[Cell; 10]; 20]) {
     
-    if self.position[0] + min_x_point > 0 {
-        self.position[0] -= 1;
-    }
-}
+        let new_position = [self.position[0] - 1, self.position[1]];
 
-    pub fn right(&mut self) {
-        let max_x_point = self.grid.iter()
-            .map(|arr| arr[0])
-            .max()
-            .unwrap();
-        
-        if self.position[0] + max_x_point < 9 {
-            self.position[0] += 1;
+        if !has_colided(&self.grid, &(new_position[0], new_position[1]), map) {
+            self.position = new_position;
         }
     }
 
-    fn rotate(&mut self, clockwise: bool/*, map: [[Cell; 10]; 20]*/) -> Tetromino {
+    pub fn right(&mut self, map: &[[Cell; 10]; 20]) {
+    
+        let new_position = [self.position[0] + 1, self.position[1]];
+
+        if !has_colided(&self.grid, &(new_position[0], new_position[1]), map) {
+            self.position = new_position;
+        }
+    }
+
+    fn rotate(&mut self, clockwise: bool) -> Tetromino {
         match self.shape {
             Shape::O => self.clone(),
             _ => {
