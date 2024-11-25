@@ -2,6 +2,7 @@ use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
+use core::f64;
 use std::{time::{Duration, Instant}, usize};
 use crate::tetrominos::{Tetromino, Bag};
 use crate::utilities::{Cell, lowest_avaliable_position};
@@ -71,7 +72,7 @@ impl Game {
 				
 				let mut run: bool = true;
 				
-        let target_frame_duration = 1000 / 60;
+        let target_frame_duration: i32 = 1000 / 60;
 
         self.render_bg();
         self.render_preview_tetrominos();
@@ -82,8 +83,8 @@ impl Game {
             self.update(&mut run);
 
             let frame_end_time = self.sdl_context.timer().unwrap().ticks();
-            let frame_duration = frame_end_time - frame_start_time;
-            let sleep_time = target_frame_duration - frame_duration;
+            let frame_duration: i32 = (frame_end_time - frame_start_time) as i32;
+            let sleep_time = target_frame_duration.saturating_sub(frame_duration);
 
             if sleep_time > 0 {
                 ::std::thread::sleep(Duration::from_millis(sleep_time as u64));
@@ -138,7 +139,6 @@ impl Game {
 
         if hard_drop {
             self.hard_drop();
-            self.render_map();
         }
 
         // set the previous position of the current tetromino
@@ -166,10 +166,9 @@ impl Game {
 
                 if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
                     self.set_piece();
-                    self.render_map();
+                    
                     return;
                 }
-
             }
 
             current_tetromino.fall();
@@ -190,12 +189,17 @@ impl Game {
             map[pos_y][pos_x] = Cell { color: Some(current_tetromino.color), occupied: true};
         }
 
+        self.clear_lines();
+
         self.state.current_tetromino = self.state.bag.next_tetromino();
 
+        self.render_map();
         self.render_preview_tetrominos();
         self.render_current_tetromino();
+        self.render_lowest_avaliable_tetromino();
 
         self.state.fall_timer = Instant::now();
+
     }
 
     fn hard_drop(&mut self) {
@@ -217,10 +221,66 @@ impl Game {
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
         self.canvas.set_draw_color(Self::BG_COLOR_2);
-        let _ = self.canvas
-            .fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
+        let _ = self.canvas.fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
 
         self.canvas.present();
+    }
+
+    fn clear_lines(&mut self) {
+        if let Some(first_full_line) = self.get_first_full_line() {
+            let ammount_lines = self.get_subsequent_lines(first_full_line);
+
+            // iterate in revrse over the map and shift rows down by ammount of lines 
+            
+            for row_index in (0..first_full_line + ammount_lines).rev() {
+
+                if row_index >= ammount_lines {
+                    self.state.map[row_index] = self.state.map[row_index - ammount_lines];
+                }
+
+                else {
+
+                    // set a blank line if the itteration goes out of bounds of the array
+
+                    self.state.map[row_index] = [Cell { occupied: false, color: None}; 10];
+
+                }
+            }
+        }
+    }
+
+    fn get_first_full_line(&self) -> Option<usize> {
+        for (row_index, row) in self.state.map.iter().enumerate() {
+            let all_occupied: bool = row.iter().all(|cell| cell.occupied);
+
+            if all_occupied {
+                return Some(row_index);
+            }
+        } 
+        None
+    }
+
+    fn get_subsequent_lines (&self, first_full_line: usize) -> usize {
+
+        let mut count = 1;
+
+        for i in 0..4 {
+            let index = first_full_line + i + 1;
+
+            if index >= self.state.map.len() {
+                break
+            }
+
+            let all_occupied: bool = self.state.map[index].iter().all(|cell| cell.occupied);
+
+            if !all_occupied {
+                break;
+            }
+
+            count += 1;
+        }
+
+        count
     }
 
     fn render_map(&mut self) {
@@ -229,6 +289,10 @@ impl Game {
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+
+        // clear background
+        self.canvas.set_draw_color(Self::BG_COLOR_2);
+        let _ = self.canvas.fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
 
         let map = &self.state.map;
 
