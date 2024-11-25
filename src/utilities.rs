@@ -26,12 +26,14 @@ pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10
 pub fn lowest_avaliable_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> Tetromino {
 
     let mut result = Tetromino::new(current_tetromino.shape.clone());
+    result.grid = current_tetromino.grid.clone();
     result.position = current_tetromino.position;
+    result.rotation = current_tetromino.rotation;
 
 
     while result.position[1] < 19 {
 
-        if has_colided(&result.grid, &(result.position[0], result.position[1]), map) {
+        if has_colided(&result.grid, &(result.position[0], result.position[1] + 1), map) {
             break;
         }
 
