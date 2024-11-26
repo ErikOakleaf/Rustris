@@ -21,6 +21,7 @@ struct GameState {
     pub previous_position: (Vec<[i32; 2]>, [i32; 2]),               //clear it from the screen
     pub hold: Option<Tetromino>,
     pub fall_timer: Instant,
+    pub is_holding: bool,
 }
 
 impl Game {
@@ -64,6 +65,7 @@ impl Game {
                 previous_position,
                 hold: None,
                 fall_timer: Instant::now(),
+                is_holding: false,
             }
         })
     }
@@ -147,9 +149,7 @@ impl Game {
 
         if switch_hold_tetromino {
             self.switch_hold_tetromino();
-            self.render_hold_tetromino();
-            self.render_preview_tetrominos();
-            self.render_current_tetromino();
+
         }
 
         // set the previous position of the current tetromino
@@ -176,7 +176,7 @@ impl Game {
                 let map = &self.state.map;
 
                 if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
-                    self.set_piece();
+                    self.set_tetromino();
                     
                     return;
                 }
@@ -189,7 +189,7 @@ impl Game {
             
     }
 
-    fn set_piece(&mut self) {
+    fn set_tetromino(&mut self) {
         let current_tetromino = &self.state.current_tetromino;
 
         for point in current_tetromino.grid.iter() {
@@ -203,6 +203,7 @@ impl Game {
         self.clear_lines();
 
         self.state.current_tetromino = self.state.bag.next_tetromino();
+        self.state.is_holding = false;
 
         self.render_map();
         self.render_preview_tetrominos();
@@ -216,7 +217,7 @@ impl Game {
         let current_tetromino = lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
 
         self.state.current_tetromino = current_tetromino;
-        self.set_piece();
+        self.set_tetromino();
     }
 
     fn render_bg(&mut self) {
@@ -298,22 +299,27 @@ impl Game {
     }
 
     fn switch_hold_tetromino(&mut self) {
-        if self.state.hold.is_none() {
-            let current_tetromino = &self.state.current_tetromino;
-            let hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
+        if !self.state.is_holding {
+            if self.state.hold.is_none() {
+                let current_tetromino = &self.state.current_tetromino;
+                let hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
 
-            self.state.hold = Some(hold_tetromino);
-            self.state.current_tetromino = self.state.bag.next_tetromino();
-        }
-        else {
-            let current_tetromino = &self.state.current_tetromino;
-            let new_hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
-            let mut new_current_tetromino = Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone()); 
-            
-            new_current_tetromino.position = current_tetromino.position;
+                self.state.hold = Some(hold_tetromino);
+                self.state.current_tetromino = self.state.bag.next_tetromino();
+            }
+            else {
+                let current_tetromino = &self.state.current_tetromino;
+                let new_hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
+                let new_current_tetromino = Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone()); 
+                
+                self.state.hold = Some(new_hold_tetromino);
+                self.state.current_tetromino = new_current_tetromino;
+            }
+            self.state.is_holding = true;
 
-            self.state.hold = Some(new_hold_tetromino);
-            self.state.current_tetromino = new_current_tetromino;
+            self.render_hold_tetromino();
+            self.render_preview_tetrominos();
+            self.render_current_tetromino();
         }
     }
 
