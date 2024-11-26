@@ -4,7 +4,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use core::f64;
 use std::{time::{Duration, Instant}, usize};
-use crate::tetrominos::{Tetromino, Bag};
+use crate::tetrominos::{Tetromino, Bag, Shape};
 use crate::utilities::{Cell, lowest_avaliable_position};
 
 pub struct Game {
@@ -26,7 +26,7 @@ struct GameState {
 impl Game {
     const WINDOW_WIDTH: u32 = 1000; 
     const WINDOW_HEIGHT: u32 = 800;
-    const BG_COLOR_1: Color = Color::RGBA(35, 35, 35, 255);
+    const BG_COLOR_1: Color = Color::RGBA(10, 10, 10, 255);
     const BG_COLOR_2: Color = Color::RGBA(0, 0, 0, 255);
 
     const CELL_SIZE: u32 = 40; 
@@ -149,6 +149,7 @@ impl Game {
             self.switch_hold_tetromino();
             self.render_hold_tetromino();
             self.render_preview_tetrominos();
+            self.render_current_tetromino();
         }
 
         // set the previous position of the current tetromino
@@ -209,7 +210,6 @@ impl Game {
         self.render_lowest_avaliable_tetromino();
 
         self.state.fall_timer = Instant::now();
-
     }
 
     fn hard_drop(&mut self) {
@@ -225,6 +225,10 @@ impl Game {
 
         //render background box in the middle of the screen
 
+        self.render_center_box();
+    }
+
+    fn render_center_box(&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
@@ -320,9 +324,7 @@ impl Game {
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
-        // clear background
-        self.canvas.set_draw_color(Self::BG_COLOR_2);
-        let _ = self.canvas.fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
+        self.render_center_box();
 
         let map = &self.state.map;
 
@@ -448,17 +450,31 @@ impl Game {
     fn render_hold_tetromino (&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 - (Self::CELL_SIZE * 4) as i32;
-        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
+        let mut x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 - (Self::CELL_SIZE * 5) as i32;
+        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
+
+        let hold_tetromino = &self.state.hold.as_ref().unwrap().clone();
+        match hold_tetromino.shape {
+            Shape::I => {
+                x_offset -= Self::CELL_SIZE as i32; 
+                y_offset += Self::CELL_SIZE as i32;
+            },
+            Shape::O => {
+                x_offset += Self::CELL_SIZE as i32;
+            },
+            _ => {},
+        }
 
         // clear the screen of previous hold tetromino
 
-        let rect: Rect = Rect::new(x_offset, y_offset, Self::CELL_SIZE * 4, Self::CELL_SIZE * 2);
+        let rect: Rect = Rect::new(x_offset - Self::CELL_SIZE as i32, y_offset - Self::CELL_SIZE as i32, Self::CELL_SIZE * 4, Self::CELL_SIZE * 3);
         self.canvas.set_draw_color(Self::BG_COLOR_1);
         let _ = self.canvas.fill_rect(rect);
+        self.canvas.present();
 
-        let hold_tetromino = &self.state.hold.as_ref().unwrap().clone();
+        // render the new hold tetromino
 
+        self.render_map();
         self.render_tetromino(hold_tetromino, x_offset, y_offset, false);
     }
 }
