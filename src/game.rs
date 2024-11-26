@@ -100,6 +100,7 @@ impl Game {
 
         let mut moved: bool = false;
         let mut hard_drop: bool = false;
+        let mut switch_hold_tetromino = false;
 
         for event in self.event_pump.poll_iter() {
             match event {
@@ -128,6 +129,9 @@ impl Game {
                 Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
                     hard_drop = true;
                 }
+                Event::KeyDown { keycode: Some(Keycode::J), .. } => {
+                    switch_hold_tetromino = true;
+                }
                 _ => {}
             }
         }
@@ -139,6 +143,10 @@ impl Game {
 
         if hard_drop {
             self.hard_drop();
+        }
+
+        if switch_hold_tetromino {
+            self.switch_hold_tetromino();
         }
 
         // set the previous position of the current tetromino
@@ -281,6 +289,26 @@ impl Game {
         }
 
         count
+    }
+
+    fn switch_hold_tetromino(&mut self) {
+        if self.state.hold.is_none() {
+            let current_tetromino = &self.state.current_tetromino;
+            let hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
+
+            self.state.hold = Some(hold_tetromino);
+            self.state.current_tetromino = self.state.bag.next_tetromino();
+        }
+        else {
+            let current_tetromino = &self.state.current_tetromino;
+            let new_hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
+            let mut new_current_tetromino = Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone()); 
+            
+            new_current_tetromino.position = current_tetromino.position;
+
+            self.state.hold = Some(new_hold_tetromino);
+            self.state.current_tetromino = new_current_tetromino;
+        }
     }
 
     fn render_map(&mut self) {
