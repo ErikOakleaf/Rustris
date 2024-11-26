@@ -147,6 +147,8 @@ impl Game {
 
         if switch_hold_tetromino {
             self.switch_hold_tetromino();
+            self.render_hold_tetromino();
+            self.render_preview_tetrominos();
         }
 
         // set the previous position of the current tetromino
@@ -441,5 +443,22 @@ impl Game {
             y_offset += (Self::CELL_SIZE * 3) as i32;
         }
 
+    }
+
+    fn render_hold_tetromino (&mut self) {
+        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 - (Self::CELL_SIZE * 4) as i32;
+        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
+
+        // clear the screen of previous hold tetromino
+
+        let rect: Rect = Rect::new(x_offset, y_offset, Self::CELL_SIZE * 4, Self::CELL_SIZE * 2);
+        self.canvas.set_draw_color(Self::BG_COLOR_1);
+        let _ = self.canvas.fill_rect(rect);
+
+        let hold_tetromino = &self.state.hold.as_ref().unwrap().clone();
+
+        self.render_tetromino(hold_tetromino, x_offset, y_offset, false);
     }
 }
