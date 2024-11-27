@@ -18,11 +18,13 @@ pub struct Game {
 
 struct GameState {
     pub map: [[Cell; 10]; 20],
+    pub level: u32,
     pub bag: Bag,
-    pub current_tetromino: Tetromino, //stores the tetromino and it's last position to
-    pub previous_position: (Vec<[i32; 2]>, [i32; 2]),               //clear it from the screen
+    pub current_tetromino: Tetromino, 
+    pub previous_position: (Vec<[i32; 2]>, [i32; 2]),  //stores the tetromino's last position to clear it from the screen             
     pub hold: Option<Tetromino>,
     pub fall_timer: Instant,
+    pub fall_interval: Duration,
     pub is_holding: bool,
     pub repeat_delay: Duration,
     pub repeat_interval: Duration,
@@ -38,7 +40,7 @@ impl Game {
 
 
 
-    pub fn new(bright_mode: bool, repeat_delay: Duration, repeat_interval: Duration) -> Result<Self, String>{
+    pub fn new(bright_mode: bool, repeat_delay: Duration, repeat_interval: Duration, fall_interval: Duration) -> Result<Self, String>{
         let sdl_context = sdl2::init()?;
         let video_subsystem = sdl_context.video()?;
         let mut window = video_subsystem
@@ -57,8 +59,6 @@ impl Game {
         let current_tetromino = bag.next_tetromino();
         let previous_position = (vec![[0, 0]], [0, 0]);
 
-        let bright_mode = true; // make this changable through menu later
-
         let (bg_color_1, bg_color_2) = if bright_mode {
             (Color::RGBA(245, 245, 245, 255), Color::RGBA(255, 255, 255, 255))
         } 
@@ -67,8 +67,7 @@ impl Game {
         };
 
         let theme = Theme { bg_color_1, bg_color_2 };
-        let repeat_delay: Duration = Duration::from_millis(300);
-        let repeat_interval: Duration = Duration::from_millis(100);
+
 
         Ok(Game {
             sdl_context,
@@ -77,6 +76,7 @@ impl Game {
             state :GameState {
                 map,
                 bag, 
+                level: 1,
                 current_tetromino,
                 previous_position,
                 hold: None,
@@ -84,6 +84,7 @@ impl Game {
                 is_holding: false,
                 repeat_delay,
                 repeat_interval,
+                fall_interval,
             },
             theme,
         })
@@ -98,6 +99,7 @@ impl Game {
         let mut key_states: HashMap<Scancode, Keystate> = HashMap::from([
             (Scancode::Left, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
             (Scancode::Right, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
+            (Scancode::Down, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
         ]);
 
         self.render_bg();
@@ -119,7 +121,6 @@ impl Game {
     }
 
     fn update(&mut self, run: &mut bool, key_states: &mut HashMap<Scancode, Keystate>) {
-
         
         self.handle_input(run, key_states);
 
@@ -127,12 +128,7 @@ impl Game {
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
 
-        let level = 3; // TODO - placeholder level variable to be changed
-        let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0); //Formula
-        // calculate the time for the piece to dropped based on the level when this reaches
-        // TODO - level 115 or above this will start giving negative numbers so think about that
-
-        if self.state.fall_timer.elapsed() >= Duration::from_secs_f64(fall_seconds) {
+        if self.state.fall_timer.elapsed() >= self.state.fall_interval {
 
             // logic for setting pieces 
             // check if the cell below is occupied or is below the floor of the map
@@ -164,8 +160,6 @@ impl Game {
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
-
-        
         
         let now = Instant::now();
 
@@ -221,6 +215,13 @@ impl Game {
                         moved = true;
                     }
                 }
+                Event::KeyDown { scancode: Some(Scancode::Down), repeat, .. } => {
+                    if !repeat {
+                        let key_state = key_states.get_mut(&Scancode::Down).unwrap();
+                        key_state.is_pressed = true;
+                        key_state.first_press_time = Instant::now();
+                    }
+                }
                 Event::KeyUp { scancode: Some(scancode), .. } => {
                     if let Some(state) = key_states.get_mut(&scancode) {
                         state.is_pressed = false;
@@ -263,6 +264,20 @@ impl Game {
                 key_states.get_mut(&Scancode::Right).unwrap().last_repeat_time = now;
                 moved = true;
             }
+        }
+
+        if key_states[&Scancode::Down].is_pressed {
+            let time_since_first_press = now.duration_since(key_states[&Scancode::Right].first_press_time);
+            let time_since_last_repeat = now.duration_since(key_states[&Scancode::Right].last_repeat_time);
+            
+            if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
+                self.state.fall_interval = Duration::from_millis(20);
+                
+            }
+        }
+        else {
+            let fall_seconds = (0.8 - ((self.state.level as f64 - 1.0) * 0.007)).powf(self.state.level as f64 - 1.0);
+            self.state.fall_interval = Duration::from_secs_f64(fall_seconds);
         }
 
         if moved {
