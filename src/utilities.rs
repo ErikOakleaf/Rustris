@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use sdl2::pixels::Color;
 use crate::tetrominos::Tetromino;
 
@@ -11,6 +13,12 @@ pub struct Theme {
     pub bg_color_1: Color,
     pub bg_color_2: Color,
     //pub tetromino_colors: [Color; 7],
+}
+
+pub struct Keystate {
+    pub is_pressed: bool,
+    pub first_press_time: Instant,
+    pub last_repeat_time: Instant,
 }
 
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10]; 20]) -> bool {

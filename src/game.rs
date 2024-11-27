@@ -1,11 +1,12 @@
-use sdl2::pixels::Color;
+use sdl2::{keyboard, pixels::Color};
 use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
+use sdl2::keyboard::{Keycode, Scancode};
 use sdl2::rect::Rect;
 use core::f64;
 use std::{time::{Duration, Instant}, usize};
+use std::collections::HashMap;
 use crate::tetrominos::{Bag, Shape, Tetromino};
-use crate::utilities::{Cell, Theme, lowest_avaliable_position};
+use crate::utilities::{Cell, Theme, Keystate, lowest_avaliable_position};
 
 pub struct Game {
     sdl_context: sdl2::Sdl, 
@@ -88,13 +89,18 @@ impl Game {
 				
         let target_frame_duration: i32 = 1000 / 60;
 
+        let mut key_states: HashMap<Scancode, Keystate> = HashMap::from([
+            (Scancode::Left, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
+            (Scancode::Right, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
+        ]);
+
         self.render_bg();
         self.render_preview_tetrominos();
 
         while run {
             let frame_start_time = self.sdl_context.timer().unwrap().ticks();
 
-            self.update(&mut run);
+            self.update(&mut run, &mut key_states);
 
             let frame_end_time = self.sdl_context.timer().unwrap().ticks();
             let frame_duration: i32 = (frame_end_time - frame_start_time) as i32;
@@ -106,63 +112,10 @@ impl Game {
         }
     }
 
-    fn update(&mut self, run: &mut bool) {
+    fn update(&mut self, run: &mut bool, key_states: &mut HashMap<Scancode, Keystate>) {
 
-        // set the previous position of the current tetromino
-        self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
-        self.state.previous_position.1 = self.state.current_tetromino.position;
-
-        let mut moved: bool = false;
-        let mut hard_drop: bool = false;
-        let mut switch_hold_tetromino = false;
-
-        for event in self.event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    *run = false;
-                },
-                Event::KeyDown { keycode: Some(Keycode::A), ..} => {
-                    self.state.current_tetromino = self.state.bag.next_tetromino();
-                }
-                Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
-                    let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.left(&self.state.map);
-                    moved = true;
-                }
-                Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
-                    let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.right(&self.state.map);
-                    moved = true;
-                }
-                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
-                    let current_tetromino = &mut self.state.current_tetromino;
-                    current_tetromino.srs_rotate(true, &self.state.map);
-                    moved = true;
-                }
-                Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
-                    hard_drop = true;
-                }
-                Event::KeyDown { keycode: Some(Keycode::J), .. } => {
-                    switch_hold_tetromino = true;
-                }
-                _ => {}
-            }
-        }
-
-        if moved {
-            self.render_current_tetromino();
-            self.render_lowest_avaliable_tetromino();
-        }
-
-        if hard_drop {
-            self.hard_drop();
-        }
-
-        if switch_hold_tetromino {
-            self.switch_hold_tetromino();
-
-        }
+        
+        self.handle_input(run, key_states);
 
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
@@ -199,6 +152,118 @@ impl Game {
             self.state.fall_timer = Instant::now(); 
         }
             
+    }
+    
+    fn handle_input (&mut self, run: &mut bool, key_states: &mut HashMap<Scancode, Keystate>) {
+        // set the previous position of the current tetromino
+        self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
+        self.state.previous_position.1 = self.state.current_tetromino.position;
+
+        
+        
+        let now = Instant::now();
+
+        let mut moved: bool = false;
+        let mut hard_drop: bool = false;
+        let mut switch_hold_tetromino = false;
+
+        for event in self.event_pump.poll_iter() {
+            match event {
+                Event::Quit {..} |
+                Event::KeyDown { scancode: Some(Scancode::Escape), .. } => {
+                    *run = false;
+                },
+                Event::KeyDown { scancode: Some(Scancode::A), ..} => {
+                    self.state.current_tetromino = self.state.bag.next_tetromino();
+                }
+                Event::KeyDown { scancode: Some(Scancode::Up), repeat, .. } => {
+                    if !repeat {
+                        let current_tetromino = &mut self.state.current_tetromino;
+                        current_tetromino.srs_rotate(true, &self.state.map);
+                        moved = true;
+                    }
+                }
+                Event::KeyDown { scancode: Some(Scancode::Space), repeat, .. } => {
+                    if !repeat {
+                        hard_drop = true;
+                    }
+                }
+                Event::KeyDown { scancode: Some(Scancode::C), .. } => {
+                    switch_hold_tetromino = true;
+                }
+                Event::KeyDown { scancode: Some(Scancode::Left), repeat, .. } => {
+                    if !repeat {
+                        let key_state = key_states.get_mut(&Scancode::Left).unwrap();
+                        key_state.is_pressed = true;
+                        key_state.first_press_time = Instant::now();
+
+                        let current_tetromino = &mut self.state.current_tetromino;
+                        current_tetromino.left(&self.state.map);
+
+                        moved = true;
+                    }
+                }
+                Event::KeyDown { scancode: Some(Scancode::Right), repeat, .. } => {
+                    if !repeat {
+                        let key_state = key_states.get_mut(&Scancode::Right).unwrap();
+                        key_state.is_pressed = true;
+                        key_state.first_press_time = Instant::now();
+
+                        let current_tetromino = &mut self.state.current_tetromino;
+                        current_tetromino.right(&self.state.map);
+
+                        moved = true;
+                    }
+                }
+                Event::KeyUp { scancode: Some(scancode), .. } => {
+                    if let Some(state) = key_states.get_mut(&scancode) {
+                        state.is_pressed = false;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+
+        if hard_drop {
+            self.hard_drop();
+        }
+
+        if switch_hold_tetromino {
+            self.switch_hold_tetromino();
+
+        }
+
+        let repeat_delay: Duration = Duration::from_millis(300);
+        let repeat_interval: Duration = Duration::from_millis(100);
+
+        if key_states[&Scancode::Left].is_pressed {
+            let time_since_first_press = now.duration_since(key_states[&Scancode::Left].first_press_time);
+            let time_since_last_repeat = now.duration_since(key_states[&Scancode::Left].last_repeat_time);
+            
+            if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
+                self.state.current_tetromino.left(&self.state.map);
+                key_states.get_mut(&Scancode::Left).unwrap().last_repeat_time = now;
+                moved = true;
+            }
+        }
+
+        if key_states[&Scancode::Right].is_pressed {
+            let time_since_first_press = now.duration_since(key_states[&Scancode::Right].first_press_time);
+            let time_since_last_repeat = now.duration_since(key_states[&Scancode::Right].last_repeat_time);
+            
+            if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
+                self.state.current_tetromino.right(&self.state.map);
+                key_states.get_mut(&Scancode::Right).unwrap().last_repeat_time = now;
+                moved = true;
+            }
+        }
+
+        if moved {
+            self.render_current_tetromino();
+            self.render_lowest_avaliable_tetromino();
+        }
+
     }
 
     fn set_tetromino(&mut self) {
