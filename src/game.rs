@@ -24,6 +24,8 @@ struct GameState {
     pub hold: Option<Tetromino>,
     pub fall_timer: Instant,
     pub is_holding: bool,
+    pub repeat_delay: Duration,
+    pub repeat_interval: Duration,
 }
 
 impl Game {
@@ -36,7 +38,7 @@ impl Game {
 
 
 
-    pub fn new() -> Result<Self, String>{
+    pub fn new(bright_mode: bool, repeat_delay: Duration, repeat_interval: Duration) -> Result<Self, String>{
         let sdl_context = sdl2::init()?;
         let video_subsystem = sdl_context.video()?;
         let mut window = video_subsystem
@@ -65,6 +67,8 @@ impl Game {
         };
 
         let theme = Theme { bg_color_1, bg_color_2 };
+        let repeat_delay: Duration = Duration::from_millis(300);
+        let repeat_interval: Duration = Duration::from_millis(100);
 
         Ok(Game {
             sdl_context,
@@ -78,6 +82,8 @@ impl Game {
                 hold: None,
                 fall_timer: Instant::now(),
                 is_holding: false,
+                repeat_delay,
+                repeat_interval,
             },
             theme,
         })
@@ -234,8 +240,8 @@ impl Game {
 
         }
 
-        let repeat_delay: Duration = Duration::from_millis(300);
-        let repeat_interval: Duration = Duration::from_millis(100);
+        let repeat_delay = self.state.repeat_delay;
+        let repeat_interval = self.state.repeat_interval;
 
         if key_states[&Scancode::Left].is_pressed {
             let time_since_first_press = now.duration_since(key_states[&Scancode::Left].first_press_time);

@@ -21,6 +21,10 @@ pub struct Keystate {
     pub last_repeat_time: Instant,
 }
 
+pub struct Settings {
+    bright_mode: bool,
+}
+
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10]; 20]) -> bool {
     for point in grid.iter() {
         let map_x: usize = (point[0] + position.0) as usize;

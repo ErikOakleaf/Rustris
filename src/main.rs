@@ -2,11 +2,15 @@ mod game;
 mod tetrominos;
 mod utilities;
 
+use std::time::Duration; 
 use game::Game;
 
 fn main() -> Result<(), String> {
+
+    let repeat_delay: Duration = Duration::from_millis(300);
+    let repeat_interval: Duration = Duration::from_millis(100);
     
-    let mut game: Game = Game::new()?;
+    let mut game: Game = Game::new(true, repeat_delay, repeat_interval)?;
 
     game.run();
 
