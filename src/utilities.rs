@@ -7,6 +7,12 @@ pub struct Cell {
     pub occupied: bool,
 }
 
+pub struct Theme {
+    pub bg_color_1: Color,
+    pub bg_color_2: Color,
+    //pub tetromino_colors: [Color; 7],
+}
+
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10]; 20]) -> bool {
     for point in grid.iter() {
         let map_x: usize = (point[0] + position.0) as usize;

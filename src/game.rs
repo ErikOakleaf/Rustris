@@ -4,14 +4,15 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use core::f64;
 use std::{time::{Duration, Instant}, usize};
-use crate::tetrominos::{Tetromino, Bag, Shape};
-use crate::utilities::{Cell, lowest_avaliable_position};
+use crate::tetrominos::{Bag, Shape, Tetromino};
+use crate::utilities::{Cell, Theme, lowest_avaliable_position};
 
 pub struct Game {
     sdl_context: sdl2::Sdl, 
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
     state: GameState,
+    theme: Theme,
 }
 
 struct GameState {
@@ -27,8 +28,6 @@ struct GameState {
 impl Game {
     const WINDOW_WIDTH: u32 = 1000; 
     const WINDOW_HEIGHT: u32 = 800;
-    const BG_COLOR_1: Color = Color::RGBA(10, 10, 10, 255);
-    const BG_COLOR_2: Color = Color::RGBA(0, 0, 0, 255);
 
     const CELL_SIZE: u32 = 40; 
     const GRID_WIDTH: u32 = 10;
@@ -47,12 +46,24 @@ impl Game {
 
         window.set_minimum_size(Self::WINDOW_WIDTH, Self::WINDOW_HEIGHT).map_err(|e| e.to_string())?;
 
-        let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+        let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+        canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
         let event_pump = sdl_context.event_pump()?;
         let map = [[Cell { color: None, occupied: false, }; 10]; 20];
         let mut bag = Bag::new();
         let current_tetromino = bag.next_tetromino();
         let previous_position = (vec![[0, 0]], [0, 0]);
+
+        let bright_mode = true; // make this changable through menu later
+
+        let (bg_color_1, bg_color_2) = if bright_mode {
+            (Color::RGBA(245, 245, 245, 255), Color::RGBA(255, 255, 255, 255))
+        } 
+        else {
+            (Color::RGBA(10, 10, 10, 255), Color::RGBA(0, 0, 0, 255))
+        };
+
+        let theme = Theme { bg_color_1, bg_color_2 };
 
         Ok(Game {
             sdl_context,
@@ -66,7 +77,8 @@ impl Game {
                 hold: None,
                 fall_timer: Instant::now(),
                 is_holding: false,
-            }
+            },
+            theme,
         })
     }
 
@@ -221,7 +233,7 @@ impl Game {
     }
 
     fn render_bg(&mut self) {
-        self.canvas.set_draw_color(Self::BG_COLOR_1);
+        self.canvas.set_draw_color(self.theme.bg_color_1);
         self.canvas.clear();
 
         //render background box in the middle of the screen
@@ -235,7 +247,7 @@ impl Game {
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
-        self.canvas.set_draw_color(Self::BG_COLOR_2);
+        self.canvas.set_draw_color(self.theme.bg_color_2);
         let _ = self.canvas.fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
 
         self.canvas.present();
@@ -355,7 +367,7 @@ impl Game {
         //draw the tetromino on the screen
         
         match clear {
-            true => self.canvas.set_draw_color(Self::BG_COLOR_2),
+            true => self.canvas.set_draw_color(self.theme.bg_color_2),
             _ => self.canvas.set_draw_color(tetromino.color),
         }
         
@@ -416,9 +428,7 @@ impl Game {
         let mut tetromino = lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
         let mut render_color = tetromino.color;
 
-        render_color.r = (render_color.r as f32 * 0.6) as u8;
-        render_color.g = (render_color.g as f32 * 0.6) as u8;
-        render_color.b = (render_color.b as f32 * 0.6) as u8;
+        render_color.a = 155;
 
         tetromino.color = render_color;
 
@@ -437,7 +447,7 @@ impl Game {
 
         let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0, box_height);
 
-        self.canvas.set_draw_color(Self::BG_COLOR_1);
+        self.canvas.set_draw_color(self.theme.bg_color_1);
         let _ = self.canvas.fill_rect(rect);
 
         // render the preview tetrominos to the screen
@@ -474,7 +484,7 @@ impl Game {
         // clear the screen of previous hold tetromino
 
         let rect: Rect = Rect::new(x_offset - Self::CELL_SIZE as i32, y_offset - Self::CELL_SIZE as i32, Self::CELL_SIZE * 4, Self::CELL_SIZE * 3);
-        self.canvas.set_draw_color(Self::BG_COLOR_1);
+        self.canvas.set_draw_color(self.theme.bg_color_1);
         let _ = self.canvas.fill_rect(rect);
         self.canvas.present();
 
