@@ -1,7 +1,6 @@
 use std::collections::VecDeque;
 use std::collections::HashMap;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use sdl2::pixels::Color;
 use crate::utilities::{Cell, has_colided};
 
@@ -224,6 +223,16 @@ impl Bag {
             self.refill();
         }
        
+        let position_x = match self.queue[0].shape {
+            Shape::O => 4,
+            _ => 3,
+        };
+        
+        self.queue[0].position[0] = position_x;
+        self.queue[0].position[1] = match self.queue[0].shape {
+            Shape::I => 0,
+            _ => -1,
+        }; 
         self.queue.pop_front().unwrap()
     }
 

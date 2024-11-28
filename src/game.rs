@@ -136,16 +136,23 @@ impl Game {
 
             let current_tetromino = &mut self.state.current_tetromino;
      
-            for point in current_tetromino.grid.iter() {
-                let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
-                let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
+            if current_tetromino.position[1] >= 0 {
+                for point in current_tetromino.grid.iter() {
+                    let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
+                    let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
 
-                let map = &self.state.map;
+                    let map = &self.state.map;
 
-                if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
-                    self.set_tetromino();
-                    
-                    return;
+                    //if pos_y + 1 == 0 || map[pos_y + 1][pos_x].occupied {
+                    //    println!("game over !");
+                    //}
+
+                    if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
+                        self.set_tetromino();
+
+
+                        return;
+                    }
                 }
             }
 
@@ -290,11 +297,17 @@ impl Game {
     fn set_tetromino(&mut self) {
         let current_tetromino = &self.state.current_tetromino;
 
+        if current_tetromino.position[1] < 0 {
+            println!("game over !");
+            return;
+        }
+
         for point in current_tetromino.grid.iter() {
             let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
             let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
             
             let map = &mut self.state.map;
+            
             map[pos_y][pos_x] = Cell { color: Some(current_tetromino.color), occupied: true};
         }
 
@@ -302,11 +315,14 @@ impl Game {
 
         self.state.current_tetromino = self.state.bag.next_tetromino();
         self.state.is_holding = false;
+        self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
+        self.state.previous_position.1 = self.state.current_tetromino.position;
+
 
         self.render_map();
         self.render_preview_tetrominos();
         self.render_current_tetromino();
-        self.render_lowest_avaliable_tetromino();
+        self.render_lowest_avaliable_tetromino();       
 
         self.state.fall_timer = Instant::now();
     }
@@ -408,8 +424,20 @@ impl Game {
             else {
                 let current_tetromino = &self.state.current_tetromino;
                 let new_hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
-                let new_current_tetromino = Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone()); 
-                
+                let mut new_current_tetromino = Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone()); 
+
+                let position_x = match new_current_tetromino.shape {
+                    Shape::O => 4,
+                    _ => 3,
+                };
+
+                let position_y = match new_current_tetromino.shape {
+                    Shape::I => 0,
+                    _ => -1,
+                };
+    
+                new_current_tetromino.position[0] = position_x;
+                new_current_tetromino.position[1] = position_y;
                 self.state.hold = Some(new_hold_tetromino);
                 self.state.current_tetromino = new_current_tetromino;
             }

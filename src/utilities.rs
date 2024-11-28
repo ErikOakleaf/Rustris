@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{time::Instant, usize};
 
 use sdl2::pixels::Color;
 use crate::tetrominos::Tetromino;
@@ -27,14 +27,18 @@ pub struct Settings {
 
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10]; 20]) -> bool {
     for point in grid.iter() {
-        let map_x: usize = (point[0] + position.0) as usize;
-        let map_y: usize = (point[1] + position.1) as usize;
+        let map_x: i32 = point[0] + position.0;
+        let map_y: i32  = point[1] + position.1;
 
-        if map_x < 0 || map_x >= 10 || map_y < 0 || map_y >= 20 {
+        if map_x < 0 || map_x >= 10 || map_y >= 20 {
             return true;
         }
 
-        if map[map_y][map_x].occupied {
+        if map_y < 0 {
+            continue;
+        }
+
+        if map[map_y as usize][map_x as usize].occupied {
             return true;
         }
     }
