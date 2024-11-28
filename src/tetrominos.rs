@@ -117,7 +117,7 @@ impl Tetromino {
                 result.grid = rotated_points;
                 result.rotation = match clockwise {
                     true => (self.rotation + 1) % 4,
-                    false => (self.rotation - 1 + 3) % 4
+                    false => (self.rotation + 3) % 4
                 };
                 result.position = self.position;
 
@@ -154,7 +154,6 @@ impl Tetromino {
         let rotation_state = self.get_rotation_state(clockwise);        
         let mut rotated = self.rotate(clockwise);
         
-       
         let tests = match self.shape {
             Shape::I => wall_kicks_i.get(&rotation_state).unwrap(),
             _ => wall_kicks.get(&rotation_state).unwrap(),

@@ -183,7 +183,14 @@ impl Game {
                 Event::KeyDown { scancode: Some(Scancode::A), ..} => {
                     self.state.current_tetromino = self.state.bag.next_tetromino();
                 }
-                Event::KeyDown { scancode: Some(Scancode::Up), repeat, .. } => {
+                Event::KeyDown { scancode: Some(Scancode::Z), repeat, .. } => {
+                    if !repeat {
+                        let current_tetromino = &mut self.state.current_tetromino;
+                        current_tetromino.srs_rotate(false, &self.state.map);
+                        moved = true;
+                    }
+                }
+                Event::KeyDown { scancode: Some(Scancode::X), repeat, .. } => {
                     if !repeat {
                         let current_tetromino = &mut self.state.current_tetromino;
                         current_tetromino.srs_rotate(true, &self.state.map);
