@@ -104,6 +104,8 @@ impl Game {
 
         self.render_bg();
         self.render_preview_tetrominos();
+        self.render_current_tetromino();
+        self.render_lowest_avaliable_tetromino();
 
         while run {
             let frame_start_time = self.sdl_context.timer().unwrap().ticks();
@@ -138,21 +140,29 @@ impl Game {
      
             if current_tetromino.position[1] >= 0 {
                 for point in current_tetromino.grid.iter() {
-                    let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
-                    let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
+                    let pos_x = point[0] + current_tetromino.position[0]; 
+                    let pos_y = point[1] + current_tetromino.position[1];
 
-                    let map = &self.state.map;
+                    if pos_x >= 0 {
+                        let map = &self.state.map;
 
-                    //if pos_y + 1 == 0 || map[pos_y + 1][pos_x].occupied {
-                    //    println!("game over !");
-                    //}
+                        //if pos_y + 1 == 0 || map[pos_y + 1][pos_x].occupied {
+                        //    println!("game over !");
+                        //}
 
-                    if pos_y + 1 > map.len() - 1 || map[pos_y + 1][pos_x].occupied {
-                        self.set_tetromino();
+                        if pos_y < -1 {
+                            return;
+                        }
+
+                        if (pos_y + 1) as usize > map.len() - 1 || map[(pos_y + 1) as usize][pos_x as usize].occupied {
+                            self.set_tetromino();
 
 
-                        return;
+                            return;
+                        }
+
                     }
+
                 }
             }
 
@@ -180,9 +190,6 @@ impl Game {
                 Event::KeyDown { scancode: Some(Scancode::Escape), .. } => {
                     *run = false;
                 },
-                Event::KeyDown { scancode: Some(Scancode::A), ..} => {
-                    self.state.current_tetromino = self.state.bag.next_tetromino();
-                }
                 Event::KeyDown { scancode: Some(Scancode::Z), repeat, .. } => {
                     if !repeat {
                         let current_tetromino = &mut self.state.current_tetromino;
@@ -297,6 +304,7 @@ impl Game {
         if moved {
             self.render_current_tetromino();
             self.render_lowest_avaliable_tetromino();
+            println!("{}, {}", self.state.current_tetromino.position[0], self.state.current_tetromino.position[1]);
         }
 
     }
