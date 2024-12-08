@@ -24,6 +24,7 @@ struct GameState {
     pub current_tetromino: Tetromino, 
     pub previous_position: (Vec<[i32; 2]>, [i32; 2]),  //stores the tetromino's last position to clear it from the screen             
     pub hold: Option<Tetromino>,
+    pub score: u32,
     pub fall_timer: Instant,
     pub fall_interval: Duration,
     pub is_holding: bool,
@@ -82,6 +83,7 @@ impl Game {
                 current_tetromino,
                 previous_position,
                 hold: None,
+                score: 0,
                 fall_timer: Instant::now(),
                 is_holding: false,
                 repeat_delay,
@@ -385,6 +387,19 @@ impl Game {
 
                 }
             }
+
+            let level = self.state.level;
+
+            let score = match ammount_lines {
+                1 => 100 * level,
+                2 => 300 * level,
+                3 => 500 * level,
+                4 => 800 * level,
+                _ => 0,
+            };
+
+            self.state.score += score;
+            println!("{}", self.state.score);
         }
     }
 
