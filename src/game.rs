@@ -17,6 +17,7 @@ pub struct Game {
 }
 
 struct GameState {
+    pub run: bool,
     pub map: [[Cell; 10]; 20],
     pub level: u32,
     pub bag: Bag,
@@ -74,6 +75,7 @@ impl Game {
             canvas,
             event_pump,
             state :GameState {
+                run: true,
                 map,
                 bag, 
                 level: 1,
@@ -91,9 +93,6 @@ impl Game {
     }
 
     pub fn run(&mut self) {
-				
-				let mut run: bool = true;
-				
         let target_frame_duration: i32 = 1000 / 60;
 
         let mut key_states: HashMap<Scancode, Keystate> = HashMap::from([
@@ -107,10 +106,10 @@ impl Game {
         self.render_current_tetromino();
         self.render_lowest_avaliable_tetromino();
 
-        while run {
+        while self.state.run {
             let frame_start_time = self.sdl_context.timer().unwrap().ticks();
 
-            self.update(&mut run, &mut key_states);
+            self.update(&mut key_states);
 
             let frame_end_time = self.sdl_context.timer().unwrap().ticks();
             let frame_duration: i32 = (frame_end_time - frame_start_time) as i32;
@@ -122,9 +121,9 @@ impl Game {
         }
     }
 
-    fn update(&mut self, run: &mut bool, key_states: &mut HashMap<Scancode, Keystate>) {
+    fn update(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
         
-        self.handle_input(run, key_states);
+        self.handle_input(key_states);
 
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
@@ -135,10 +134,9 @@ impl Game {
             // logic for setting pieces 
             // check if the cell below is occupied or is below the floor of the map
 
-
             let current_tetromino = &mut self.state.current_tetromino;
      
-            if current_tetromino.position[1] >= 0 {
+            if current_tetromino.position[1] >= -1 {
                 for point in current_tetromino.grid.iter() {
                     let pos_x = point[0] + current_tetromino.position[0]; 
                     let pos_y = point[1] + current_tetromino.position[1];
@@ -146,17 +144,12 @@ impl Game {
                     if pos_x >= 0 {
                         let map = &self.state.map;
 
-                        //if pos_y + 1 == 0 || map[pos_y + 1][pos_x].occupied {
-                        //    println!("game over !");
-                        //}
-
                         if pos_y < -1 {
                             return;
                         }
 
                         if (pos_y + 1) as usize > map.len() - 1 || map[(pos_y + 1) as usize][pos_x as usize].occupied {
                             self.set_tetromino();
-
 
                             return;
                         }
@@ -173,7 +166,7 @@ impl Game {
             
     }
     
-    fn handle_input (&mut self, run: &mut bool, key_states: &mut HashMap<Scancode, Keystate>) {
+    fn handle_input (&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
@@ -188,7 +181,7 @@ impl Game {
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { scancode: Some(Scancode::Escape), .. } => {
-                    *run = false;
+                    self.state.run = false;
                 },
                 Event::KeyDown { scancode: Some(Scancode::Z), repeat, .. } => {
                     if !repeat {
@@ -312,18 +305,21 @@ impl Game {
     fn set_tetromino(&mut self) {
         let current_tetromino = &self.state.current_tetromino;
 
-        if current_tetromino.position[1] < 0 {
-            println!("game over !");
-            return;
-        }
-
         for point in current_tetromino.grid.iter() {
-            let pos_x: usize = (point[0] + current_tetromino.position[0]) as usize; 
-            let pos_y: usize = (point[1] + current_tetromino.position[1]) as usize;
+            let pos_x = point[0] + current_tetromino.position[0]; 
+            let pos_y = point[1] + current_tetromino.position[1];
             
+            // check for game over state
+            
+            if pos_y < 0 {
+                println!("Game over!");
+                self.state.run = false;
+                return;
+            }
+
             let map = &mut self.state.map;
             
-            map[pos_y][pos_x] = Cell { color: Some(current_tetromino.color), occupied: true};
+            map[pos_y as usize][pos_x as usize] = Cell { color: Some(current_tetromino.color), occupied: true};
         }
 
         self.clear_lines();
@@ -332,7 +328,6 @@ impl Game {
         self.state.is_holding = false;
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
-
 
         self.render_map();
         self.render_preview_tetrominos();
