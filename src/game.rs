@@ -25,6 +25,7 @@ struct GameState {
     pub previous_position: (Vec<[i32; 2]>, [i32; 2]),  //stores the tetromino's last position to clear it from the screen             
     pub hold: Option<Tetromino>,
     pub score: u32,
+    pub lines_cleared: u32,
     pub fall_timer: Instant,
     pub fall_interval: Duration,
     pub is_holding: bool,
@@ -80,6 +81,7 @@ impl Game {
                 map,
                 bag, 
                 level: 1,
+                lines_cleared: 0,
                 current_tetromino,
                 previous_position,
                 hold: None,
@@ -299,7 +301,6 @@ impl Game {
         if moved {
             self.render_current_tetromino();
             self.render_lowest_avaliable_tetromino();
-            println!("{}, {}", self.state.current_tetromino.position[0], self.state.current_tetromino.position[1]);
         }
 
     }
@@ -388,6 +389,8 @@ impl Game {
                 }
             }
 
+            self.state.lines_cleared += ammount_lines as u32;
+
             let level = self.state.level;
 
             let score = match ammount_lines {
@@ -399,9 +402,18 @@ impl Game {
             };
 
             self.state.score += score;
-            println!("{}", self.state.score);
+            self.set_level();
+            println!("Lines cleared: {}, Score: {}, Level: {}", self.state.lines_cleared, self.state.score, self.state.level);
+            
+
         }
     }
+
+    
+    fn set_level(&mut self) {
+        self.state.level = (self.state.lines_cleared / 10) + 1;
+    }
+
 
     fn get_first_full_line(&self) -> Option<usize> {
         for (row_index, row) in self.state.map.iter().enumerate() {
@@ -471,6 +483,7 @@ impl Game {
             self.render_hold_tetromino();
             self.render_preview_tetrominos();
             self.render_current_tetromino();
+            self.render_lowest_avaliable_tetromino();
         }
     }
 
