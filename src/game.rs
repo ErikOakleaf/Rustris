@@ -1,9 +1,9 @@
-use sdl2::{keyboard, pixels::Color};
+use sdl2::pixels::Color;
 use sdl2::event::Event;
-use sdl2::keyboard::{Keycode, Scancode};
+use sdl2::keyboard::Scancode;
 use sdl2::rect::Rect;
 use core::f64;
-use std::{time::{Duration, Instant}, usize};
+use std::time::{Duration, Instant};
 use std::collections::HashMap;
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{Cell, Theme, Keystate, lowest_avaliable_position};
