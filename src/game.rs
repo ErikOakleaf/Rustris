@@ -1,15 +1,15 @@
-use sdl2::pixels::Color;
+use crate::tetrominos::{Bag, Shape, Tetromino};
+use crate::utilities::{lowest_avaliable_position, Cell, Keystate, Theme};
+use core::f64;
 use sdl2::event::Event;
 use sdl2::keyboard::Scancode;
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use core::f64;
-use std::time::{Duration, Instant};
 use std::collections::HashMap;
-use crate::tetrominos::{Bag, Shape, Tetromino};
-use crate::utilities::{Cell, Theme, Keystate, lowest_avaliable_position};
+use std::time::{Duration, Instant};
 
 pub struct Game {
-    sdl_context: sdl2::Sdl, 
+    sdl_context: sdl2::Sdl,
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
     state: GameState,
@@ -21,8 +21,8 @@ struct GameState {
     pub map: [[Cell; 10]; 20],
     pub level: u32,
     pub bag: Bag,
-    pub current_tetromino: Tetromino, 
-    pub previous_position: (Vec<[i32; 2]>, [i32; 2]),  //stores the tetromino's last position to clear it from the screen             
+    pub current_tetromino: Tetromino,
+    pub previous_position: (Vec<[i32; 2]>, [i32; 2]), //stores the tetromino's last position to clear it from the screen
     pub hold: Option<Tetromino>,
     pub score: u32,
     pub lines_cleared: u32,
@@ -34,16 +34,19 @@ struct GameState {
 }
 
 impl Game {
-    const WINDOW_WIDTH: u32 = 1000; 
+    const WINDOW_WIDTH: u32 = 1000;
     const WINDOW_HEIGHT: u32 = 800;
 
-    const CELL_SIZE: u32 = 40; 
+    const CELL_SIZE: u32 = 40;
     const GRID_WIDTH: u32 = 10;
-    const GRID_HEIGHT: u32 = 20;        
+    const GRID_HEIGHT: u32 = 20;
 
-
-
-    pub fn new(bright_mode: bool, repeat_delay: Duration, repeat_interval: Duration, fall_interval: Duration) -> Result<Self, String>{
+    pub fn new(
+        bright_mode: bool,
+        repeat_delay: Duration,
+        repeat_interval: Duration,
+        fall_interval: Duration,
+    ) -> Result<Self, String> {
         let sdl_context = sdl2::init()?;
         let video_subsystem = sdl_context.video()?;
         let mut window = video_subsystem
@@ -52,34 +55,43 @@ impl Game {
             .build()
             .map_err(|e| e.to_string())?;
 
-        window.set_minimum_size(Self::WINDOW_WIDTH, Self::WINDOW_HEIGHT).map_err(|e| e.to_string())?;
+        window
+            .set_minimum_size(Self::WINDOW_WIDTH, Self::WINDOW_HEIGHT)
+            .map_err(|e| e.to_string())?;
 
         let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
         canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
         let event_pump = sdl_context.event_pump()?;
-        let map = [[Cell { color: None, occupied: false, }; 10]; 20];
+        let map = [[Cell {
+            color: None,
+            occupied: false,
+        }; 10]; 20];
         let mut bag = Bag::new();
         let current_tetromino = bag.next_tetromino();
         let previous_position = (vec![[0, 0]], [0, 0]);
 
         let (bg_color_1, bg_color_2) = if bright_mode {
-            (Color::RGBA(245, 245, 245, 255), Color::RGBA(255, 255, 255, 255))
-        } 
-        else {
+            (
+                Color::RGBA(245, 245, 245, 255),
+                Color::RGBA(255, 255, 255, 255),
+            )
+        } else {
             (Color::RGBA(10, 10, 10, 255), Color::RGBA(0, 0, 0, 255))
         };
 
-        let theme = Theme { bg_color_1, bg_color_2 };
-
+        let theme = Theme {
+            bg_color_1,
+            bg_color_2,
+        };
 
         Ok(Game {
             sdl_context,
             canvas,
             event_pump,
-            state :GameState {
+            state: GameState {
                 run: true,
                 map,
-                bag, 
+                bag,
                 level: 1,
                 lines_cleared: 0,
                 current_tetromino,
@@ -100,9 +112,30 @@ impl Game {
         let target_frame_duration: i32 = 1000 / 60;
 
         let mut key_states: HashMap<Scancode, Keystate> = HashMap::from([
-            (Scancode::Left, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
-            (Scancode::Right, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
-            (Scancode::Down, Keystate {is_pressed: false, first_press_time: Instant::now(), last_repeat_time: Instant::now()}),
+            (
+                Scancode::Left,
+                Keystate {
+                    is_pressed: false,
+                    first_press_time: Instant::now(),
+                    last_repeat_time: Instant::now(),
+                },
+            ),
+            (
+                Scancode::Right,
+                Keystate {
+                    is_pressed: false,
+                    first_press_time: Instant::now(),
+                    last_repeat_time: Instant::now(),
+                },
+            ),
+            (
+                Scancode::Down,
+                Keystate {
+                    is_pressed: false,
+                    first_press_time: Instant::now(),
+                    last_repeat_time: Instant::now(),
+                },
+            ),
         ]);
 
         self.render_bg();
@@ -126,7 +159,6 @@ impl Game {
     }
 
     fn update(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
-        
         self.handle_input(key_states);
 
         // set the previous position of the current tetromino
@@ -134,15 +166,14 @@ impl Game {
         self.state.previous_position.1 = self.state.current_tetromino.position;
 
         if self.state.fall_timer.elapsed() >= self.state.fall_interval {
-
-            // logic for setting pieces 
+            // logic for setting pieces
             // check if the cell below is occupied or is below the floor of the map
 
             let current_tetromino = &mut self.state.current_tetromino;
-     
+
             if current_tetromino.position[1] >= -1 {
                 for point in current_tetromino.grid.iter() {
-                    let pos_x = point[0] + current_tetromino.position[0]; 
+                    let pos_x = point[0] + current_tetromino.position[0];
                     let pos_y = point[1] + current_tetromino.position[1];
 
                     if pos_x >= 0 {
@@ -152,29 +183,28 @@ impl Game {
                             return;
                         }
 
-                        if (pos_y + 1) as usize > map.len() - 1 || map[(pos_y + 1) as usize][pos_x as usize].occupied {
+                        if (pos_y + 1) as usize > map.len() - 1
+                            || map[(pos_y + 1) as usize][pos_x as usize].occupied
+                        {
                             self.set_tetromino();
 
                             return;
                         }
-
                     }
-
                 }
             }
 
             current_tetromino.fall();
             self.render_current_tetromino();
-            self.state.fall_timer = Instant::now(); 
+            self.state.fall_timer = Instant::now();
         }
-            
     }
-    
-    fn handle_input (&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
+
+    fn handle_input(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
-        
+
         let now = Instant::now();
 
         let mut moved: bool = false;
@@ -183,33 +213,55 @@ impl Game {
 
         for event in self.event_pump.poll_iter() {
             match event {
-                Event::Quit {..} |
-                Event::KeyDown { scancode: Some(Scancode::Escape), .. } => {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    scancode: Some(Scancode::Escape),
+                    ..
+                } => {
                     self.state.run = false;
-                },
-                Event::KeyDown { scancode: Some(Scancode::Z), repeat, .. } => {
+                }
+                Event::KeyDown {
+                    scancode: Some(Scancode::Z),
+                    repeat,
+                    ..
+                } => {
                     if !repeat {
                         let current_tetromino = &mut self.state.current_tetromino;
                         current_tetromino.srs_rotate(false, &self.state.map);
                         moved = true;
                     }
                 }
-                Event::KeyDown { scancode: Some(Scancode::X), repeat, .. } => {
+                Event::KeyDown {
+                    scancode: Some(Scancode::X),
+                    repeat,
+                    ..
+                } => {
                     if !repeat {
                         let current_tetromino = &mut self.state.current_tetromino;
                         current_tetromino.srs_rotate(true, &self.state.map);
                         moved = true;
                     }
                 }
-                Event::KeyDown { scancode: Some(Scancode::Space), repeat, .. } => {
+                Event::KeyDown {
+                    scancode: Some(Scancode::Space),
+                    repeat,
+                    ..
+                } => {
                     if !repeat {
                         hard_drop = true;
                     }
                 }
-                Event::KeyDown { scancode: Some(Scancode::C), .. } => {
+                Event::KeyDown {
+                    scancode: Some(Scancode::C),
+                    ..
+                } => {
                     switch_hold_tetromino = true;
                 }
-                Event::KeyDown { scancode: Some(Scancode::Left), repeat, .. } => {
+                Event::KeyDown {
+                    scancode: Some(Scancode::Left),
+                    repeat,
+                    ..
+                } => {
                     if !repeat {
                         let key_state = key_states.get_mut(&Scancode::Left).unwrap();
                         key_state.is_pressed = true;
@@ -221,7 +273,11 @@ impl Game {
                         moved = true;
                     }
                 }
-                Event::KeyDown { scancode: Some(Scancode::Right), repeat, .. } => {
+                Event::KeyDown {
+                    scancode: Some(Scancode::Right),
+                    repeat,
+                    ..
+                } => {
                     if !repeat {
                         let key_state = key_states.get_mut(&Scancode::Right).unwrap();
                         key_state.is_pressed = true;
@@ -233,14 +289,21 @@ impl Game {
                         moved = true;
                     }
                 }
-                Event::KeyDown { scancode: Some(Scancode::Down), repeat, .. } => {
+                Event::KeyDown {
+                    scancode: Some(Scancode::Down),
+                    repeat,
+                    ..
+                } => {
                     if !repeat {
                         let key_state = key_states.get_mut(&Scancode::Down).unwrap();
                         key_state.is_pressed = true;
                         key_state.first_press_time = Instant::now();
                     }
                 }
-                Event::KeyUp { scancode: Some(scancode), .. } => {
+                Event::KeyUp {
+                    scancode: Some(scancode),
+                    ..
+                } => {
                     if let Some(state) = key_states.get_mut(&scancode) {
                         state.is_pressed = false;
                     }
@@ -249,52 +312,61 @@ impl Game {
             }
         }
 
-
         if hard_drop {
             self.hard_drop();
         }
 
         if switch_hold_tetromino {
             self.switch_hold_tetromino();
-
         }
 
         let repeat_delay = self.state.repeat_delay;
         let repeat_interval = self.state.repeat_interval;
 
         if key_states[&Scancode::Left].is_pressed {
-            let time_since_first_press = now.duration_since(key_states[&Scancode::Left].first_press_time);
-            let time_since_last_repeat = now.duration_since(key_states[&Scancode::Left].last_repeat_time);
-            
+            let time_since_first_press =
+                now.duration_since(key_states[&Scancode::Left].first_press_time);
+            let time_since_last_repeat =
+                now.duration_since(key_states[&Scancode::Left].last_repeat_time);
+
             if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
                 self.state.current_tetromino.left(&self.state.map);
-                key_states.get_mut(&Scancode::Left).unwrap().last_repeat_time = now;
+                key_states
+                    .get_mut(&Scancode::Left)
+                    .unwrap()
+                    .last_repeat_time = now;
                 moved = true;
             }
         }
 
         if key_states[&Scancode::Right].is_pressed {
-            let time_since_first_press = now.duration_since(key_states[&Scancode::Right].first_press_time);
-            let time_since_last_repeat = now.duration_since(key_states[&Scancode::Right].last_repeat_time);
-            
+            let time_since_first_press =
+                now.duration_since(key_states[&Scancode::Right].first_press_time);
+            let time_since_last_repeat =
+                now.duration_since(key_states[&Scancode::Right].last_repeat_time);
+
             if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
                 self.state.current_tetromino.right(&self.state.map);
-                key_states.get_mut(&Scancode::Right).unwrap().last_repeat_time = now;
+                key_states
+                    .get_mut(&Scancode::Right)
+                    .unwrap()
+                    .last_repeat_time = now;
                 moved = true;
             }
         }
 
         if key_states[&Scancode::Down].is_pressed {
-            let time_since_first_press = now.duration_since(key_states[&Scancode::Right].first_press_time);
-            let time_since_last_repeat = now.duration_since(key_states[&Scancode::Right].last_repeat_time);
-            
+            let time_since_first_press =
+                now.duration_since(key_states[&Scancode::Right].first_press_time);
+            let time_since_last_repeat =
+                now.duration_since(key_states[&Scancode::Right].last_repeat_time);
+
             if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
                 self.state.fall_interval = Duration::from_millis(20);
-                
             }
-        }
-        else {
-            let fall_seconds = (0.8 - ((self.state.level as f64 - 1.0) * 0.007)).powf(self.state.level as f64 - 1.0);
+        } else {
+            let fall_seconds = (0.8 - ((self.state.level as f64 - 1.0) * 0.007))
+                .powf(self.state.level as f64 - 1.0);
             self.state.fall_interval = Duration::from_secs_f64(fall_seconds);
         }
 
@@ -302,18 +374,17 @@ impl Game {
             self.render_current_tetromino();
             self.render_lowest_avaliable_tetromino();
         }
-
     }
 
     fn set_tetromino(&mut self) {
         let current_tetromino = &self.state.current_tetromino;
 
         for point in current_tetromino.grid.iter() {
-            let pos_x = point[0] + current_tetromino.position[0]; 
+            let pos_x = point[0] + current_tetromino.position[0];
             let pos_y = point[1] + current_tetromino.position[1];
-            
+
             // check for game over state
-            
+
             if pos_y < 0 {
                 println!("Game over!");
                 self.state.run = false;
@@ -321,8 +392,11 @@ impl Game {
             }
 
             let map = &mut self.state.map;
-            
-            map[pos_y as usize][pos_x as usize] = Cell { color: Some(current_tetromino.color), occupied: true};
+
+            map[pos_y as usize][pos_x as usize] = Cell {
+                color: Some(current_tetromino.color),
+                occupied: true,
+            };
         }
 
         self.clear_lines();
@@ -335,13 +409,14 @@ impl Game {
         self.render_map();
         self.render_preview_tetrominos();
         self.render_current_tetromino();
-        self.render_lowest_avaliable_tetromino();       
+        self.render_lowest_avaliable_tetromino();
 
         self.state.fall_timer = Instant::now();
     }
 
     fn hard_drop(&mut self) {
-        let current_tetromino = lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
+        let current_tetromino =
+            lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
 
         self.state.current_tetromino = current_tetromino;
         self.set_tetromino();
@@ -363,7 +438,9 @@ impl Game {
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
         self.canvas.set_draw_color(self.theme.bg_color_2);
-        let _ = self.canvas.fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
+        let _ = self
+            .canvas
+            .fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
 
         self.canvas.present();
     }
@@ -372,20 +449,18 @@ impl Game {
         if let Some(first_full_line) = self.get_first_full_line() {
             let ammount_lines = self.get_subsequent_lines(first_full_line);
 
-            // iterate in revrse over the map and shift rows down by ammount of lines 
-            
-            for row_index in (0..first_full_line + ammount_lines).rev() {
+            // iterate in revrse over the map and shift rows down by ammount of lines
 
+            for row_index in (0..first_full_line + ammount_lines).rev() {
                 if row_index >= ammount_lines {
                     self.state.map[row_index] = self.state.map[row_index - ammount_lines];
-                }
-
-                else {
-
+                } else {
                     // set a blank line if the itteration goes out of bounds of the array
 
-                    self.state.map[row_index] = [Cell { occupied: false, color: None}; 10];
-
+                    self.state.map[row_index] = [Cell {
+                        occupied: false,
+                        color: None,
+                    }; 10];
                 }
             }
 
@@ -403,17 +478,16 @@ impl Game {
 
             self.state.score += score;
             self.set_level();
-            println!("Lines cleared: {}, Score: {}, Level: {}", self.state.lines_cleared, self.state.score, self.state.level);
-            
-
+            println!(
+                "Lines cleared: {}, Score: {}, Level: {}",
+                self.state.lines_cleared, self.state.score, self.state.level
+            );
         }
     }
 
-    
     fn set_level(&mut self) {
         self.state.level = (self.state.lines_cleared / 10) + 1;
     }
-
 
     fn get_first_full_line(&self) -> Option<usize> {
         for (row_index, row) in self.state.map.iter().enumerate() {
@@ -422,19 +496,18 @@ impl Game {
             if all_occupied {
                 return Some(row_index);
             }
-        } 
+        }
         None
     }
 
-    fn get_subsequent_lines (&self, first_full_line: usize) -> usize {
-
+    fn get_subsequent_lines(&self, first_full_line: usize) -> usize {
         let mut count = 1;
 
         for i in 0..4 {
             let index = first_full_line + i + 1;
 
             if index >= self.state.map.len() {
-                break
+                break;
             }
 
             let all_occupied: bool = self.state.map[index].iter().all(|cell| cell.occupied);
@@ -457,11 +530,11 @@ impl Game {
 
                 self.state.hold = Some(hold_tetromino);
                 self.state.current_tetromino = self.state.bag.next_tetromino();
-            }
-            else {
+            } else {
                 let current_tetromino = &self.state.current_tetromino;
                 let new_hold_tetromino = Tetromino::new(current_tetromino.shape.clone());
-                let mut new_current_tetromino = Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone()); 
+                let mut new_current_tetromino =
+                    Tetromino::new(self.state.hold.as_ref().unwrap().shape.clone());
 
                 let position_x = match new_current_tetromino.shape {
                     Shape::O => 4,
@@ -472,7 +545,7 @@ impl Game {
                     Shape::I => 0,
                     _ => -1,
                 };
-    
+
                 new_current_tetromino.position[0] = position_x;
                 new_current_tetromino.position[1] = position_y;
                 self.state.hold = Some(new_hold_tetromino);
@@ -488,7 +561,6 @@ impl Game {
     }
 
     fn render_map(&mut self) {
-        
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
@@ -499,7 +571,7 @@ impl Game {
         let map = &self.state.map;
 
         for (y, row) in map.iter().enumerate() {
-            for(x, &cell) in row.iter().enumerate() {
+            for (x, &cell) in row.iter().enumerate() {
                 if cell.occupied {
                     self.canvas.set_draw_color(cell.color.unwrap());
 
@@ -515,18 +587,23 @@ impl Game {
         self.canvas.present();
     }
 
-    fn render_tetromino(&mut self, tetromino: &Tetromino, x_offset: i32, y_offset: i32, clear: bool){ 
+    fn render_tetromino(
+        &mut self,
+        tetromino: &Tetromino,
+        x_offset: i32,
+        y_offset: i32,
+        clear: bool,
+    ) {
         //draw the tetromino on the screen
-        
+
         match clear {
             true => self.canvas.set_draw_color(self.theme.bg_color_2),
             _ => self.canvas.set_draw_color(tetromino.color),
         }
-        
+
         for point in tetromino.grid.iter() {
             let pos_x = (point[0] + tetromino.position[0]) * Self::CELL_SIZE as i32 + x_offset;
             let pos_y = (point[1] + tetromino.position[1]) * Self::CELL_SIZE as i32 + y_offset;
-
 
             let rect: Rect = Rect::new(pos_x, pos_y, Self::CELL_SIZE, Self::CELL_SIZE);
 
@@ -534,7 +611,7 @@ impl Game {
         }
 
         self.canvas.present();
-    }   
+    }
 
     fn render_current_tetromino(&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
@@ -549,23 +626,22 @@ impl Game {
         let mut previous_tetromino = Tetromino::new(current_tetromino.shape.clone());
         previous_tetromino.grid = previous_grid;
         previous_tetromino.position = previous_position;
-        
+
         // clear the screen of previous position where the tetromino was
-        
+
         self.render_tetromino(&previous_tetromino, x_offset, y_offset, true);
 
-        // render the current tetromino 
+        // render the current tetromino
 
         self.render_tetromino(&current_tetromino, x_offset, y_offset, false);
     }
 
     fn render_lowest_avaliable_tetromino(&mut self) {
-
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
-        
+
         // clear screen of previous tetrominos lowest avaliable tetromino
 
         let mut previous_tetromino = Tetromino::new(self.state.current_tetromino.shape.clone());
@@ -576,8 +652,9 @@ impl Game {
         self.render_tetromino(&previous_tetromino, x_offset, y_offset, true);
 
         // render the lowest avaliable tetromino
-        
-        let mut tetromino = lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
+
+        let mut tetromino =
+            lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
         let mut render_color = tetromino.color;
 
         render_color.a = 155;
@@ -587,17 +664,25 @@ impl Game {
         self.render_tetromino(&tetromino, x_offset, y_offset, false)
     }
 
-    fn render_preview_tetrominos (&mut self) {
+    fn render_preview_tetrominos(&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 + box_width as i32 + (Self::CELL_SIZE * 2) as i32;
-        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
-        
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32
+            + box_width as i32
+            + (Self::CELL_SIZE * 2) as i32;
+        let mut y_offset: i32 =
+            (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
+
         let preview_tetrominos: &Vec<Tetromino> = &self.state.bag.preview(5);
 
         // clear the preview tetromino part of the screen before rendering the tetrominos
 
-        let rect: Rect = Rect::new(x_offset, y_offset, self.canvas.window().size().0, box_height);
+        let rect: Rect = Rect::new(
+            x_offset,
+            y_offset,
+            self.canvas.window().size().0,
+            box_height,
+        );
 
         self.canvas.set_draw_color(self.theme.bg_color_1);
         let _ = self.canvas.fill_rect(rect);
@@ -605,37 +690,42 @@ impl Game {
         // render the preview tetrominos to the screen
 
         for tetromino in preview_tetrominos.iter() {
-            
             self.render_tetromino(tetromino, x_offset, y_offset, false);
 
             // make the y offset grow for each iteration so that each preview get's rendered lower
             // than the other
             y_offset += (Self::CELL_SIZE * 3) as i32;
         }
-
     }
 
-    fn render_hold_tetromino (&mut self) {
+    fn render_hold_tetromino(&mut self) {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let mut x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32 - (Self::CELL_SIZE * 5) as i32;
-        let mut y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
+        let mut x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32
+            - (Self::CELL_SIZE * 5) as i32;
+        let mut y_offset: i32 =
+            (self.canvas.window().size().1 - box_height) as i32 + (Self::CELL_SIZE * 2) as i32;
 
         let hold_tetromino = &self.state.hold.as_ref().unwrap().clone();
         match hold_tetromino.shape {
             Shape::I => {
-                x_offset -= Self::CELL_SIZE as i32; 
+                x_offset -= Self::CELL_SIZE as i32;
                 y_offset += Self::CELL_SIZE as i32;
-            },
+            }
             Shape::O => {
                 x_offset += Self::CELL_SIZE as i32;
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         // clear the screen of previous hold tetromino
 
-        let rect: Rect = Rect::new(x_offset - Self::CELL_SIZE as i32, y_offset - Self::CELL_SIZE as i32, Self::CELL_SIZE * 4, Self::CELL_SIZE * 3);
+        let rect: Rect = Rect::new(
+            x_offset - Self::CELL_SIZE as i32,
+            y_offset - Self::CELL_SIZE as i32,
+            Self::CELL_SIZE * 4,
+            Self::CELL_SIZE * 3,
+        );
         self.canvas.set_draw_color(self.theme.bg_color_1);
         let _ = self.canvas.fill_rect(rect);
         self.canvas.present();
