@@ -8,8 +8,8 @@ use sdl2::rect::Rect;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-pub struct Game {
-    sdl_context: sdl2::Sdl,
+pub struct Game<'a> {
+    sdl_context: & 'a sdl2::Sdl,
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
     state: GameState,
@@ -33,7 +33,7 @@ struct GameState {
     pub repeat_interval: Duration,
 }
 
-impl Game {
+impl<'a> Game<'a> {
     const WINDOW_WIDTH: u32 = 1000;
     const WINDOW_HEIGHT: u32 = 800;
 
@@ -42,12 +42,12 @@ impl Game {
     const GRID_HEIGHT: u32 = 20;
 
     pub fn new(
+        sdl_context: &'a sdl2::Sdl,
         bright_mode: bool,
         repeat_delay: Duration,
         repeat_interval: Duration,
         fall_interval: Duration,
     ) -> Result<Self, String> {
-        let sdl_context = sdl2::init()?;
         let video_subsystem = sdl_context.video()?;
         let mut window = video_subsystem
             .window("rusty-tetris", Self::WINDOW_WIDTH, Self::WINDOW_HEIGHT)
