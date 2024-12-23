@@ -89,7 +89,7 @@ impl<'a> Game<'a> {
 
         // init font here
         let font_path = Path::new(&"assets/FreeMono.ttf");
-        let font = ttf_context.load_font(font_path, 128)?;
+        let font = ttf_context.load_font(font_path, 22)?;
 
         Ok(Game {
             sdl_context,
@@ -150,6 +150,7 @@ impl<'a> Game<'a> {
         self.render_preview_tetrominos();
         self.render_current_tetromino();
         self.render_lowest_avaliable_tetromino();
+        self.render_score();
 
         while self.state.run {
             let frame_start_time = self.sdl_context.timer().unwrap().ticks();
@@ -205,8 +206,6 @@ impl<'a> Game<'a> {
             current_tetromino.fall();
             self.render_current_tetromino();
             self.state.fall_timer = Instant::now();
-
-            let _ = self.render_text();
         }
     }
 
@@ -420,6 +419,7 @@ impl<'a> Game<'a> {
         self.render_preview_tetrominos();
         self.render_current_tetromino();
         self.render_lowest_avaliable_tetromino();
+        self.render_score();
 
         self.state.fall_timer = Instant::now();
     }
@@ -746,9 +746,8 @@ impl<'a> Game<'a> {
         self.render_tetromino(hold_tetromino, x_offset, y_offset, false);
     }
 
-    fn render_text(&mut self) -> Result<(), String> {
+    fn render_text(&mut self, print_string: &String, x: i32, y: i32) -> Result<(), String> {
         let texture_creator = self.canvas.texture_creator();
-        let print_string = "Hello World".to_string();
 
         let surface = self
             .font
@@ -760,11 +759,40 @@ impl<'a> Game<'a> {
             .create_texture_from_surface(&surface)
             .map_err(|e| e.to_string())?;
 
-        let target_rect = Rect::new(10, 0, 200, 100);
+        let width = surface.width();
+        let height = surface.height();
+
+        let target_rect = Rect::new(x, y, width, height);
+
         self.canvas.copy(&texture, None, Some(target_rect))?;
 
         self.canvas.present();
 
         Ok(())
+    }
+
+    fn render_score(&mut self) {
+        // clear the area of the screen that text is suposed to be renderd on
+
+        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+
+        let rect = Rect::new(0, 0, x_offset as u32, box_height);
+
+        self.canvas.set_draw_color(self.theme.bg_color_1);
+        let _ = self.canvas.fill_rect(rect);
+
+        let score_x = 100;
+        let score_y = 650;
+        let score = &format!("Score: {}", &self.state.score).to_string();
+
+        let _ = self.render_text(score, score_x, score_y);
+
+        let lines_x = 100;
+        let lines_y = 700;
+        let lines = &format!("Lines: {}", &self.state.lines_cleared).to_string();
+
+        let _ = self.render_text(lines, lines_x, lines_y);
     }
 }
