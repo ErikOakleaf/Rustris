@@ -6,11 +6,11 @@ use sdl2::keyboard::Scancode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 use std::path::Path;
+use std::time::{Duration, Instant};
 
 pub struct Game<'a> {
-    sdl_context: & 'a sdl2::Sdl,
+    sdl_context: &'a sdl2::Sdl,
     font: sdl2::ttf::Font<'a, 'static>,
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
@@ -205,6 +205,8 @@ impl<'a> Game<'a> {
             current_tetromino.fall();
             self.render_current_tetromino();
             self.state.fall_timer = Instant::now();
+
+            let _ = self.render_text();
         }
     }
 
@@ -742,5 +744,27 @@ impl<'a> Game<'a> {
 
         self.render_map();
         self.render_tetromino(hold_tetromino, x_offset, y_offset, false);
+    }
+
+    fn render_text(&mut self) -> Result<(), String> {
+        let texture_creator = self.canvas.texture_creator();
+        let print_string = "Hello World".to_string();
+
+        let surface = self
+            .font
+            .render(&print_string)
+            .blended(Color::RGBA(0, 0, 0, 255))
+            .map_err(|e| e.to_string())?;
+
+        let texture = texture_creator
+            .create_texture_from_surface(&surface)
+            .map_err(|e| e.to_string())?;
+
+        let target_rect = Rect::new(10, 0, 200, 100);
+        self.canvas.copy(&texture, None, Some(target_rect))?;
+
+        self.canvas.present();
+
+        Ok(())
     }
 }
