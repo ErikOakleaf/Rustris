@@ -10,8 +10,9 @@ fn main() -> Result<(), String> {
     let repeat_interval: Duration = Duration::from_millis(20);
     let fall_interval: Duration = Duration::from_millis(20);
     let sdl_context = sdl2::init()?;
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
-    let mut game: Game = Game::new(&sdl_context, true, repeat_delay, repeat_interval, fall_interval)?;
+    let mut game: Game = Game::new(&sdl_context, &ttf_context, true, repeat_delay, repeat_interval, fall_interval)?;
 
     game.run();
 

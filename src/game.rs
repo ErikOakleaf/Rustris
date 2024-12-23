@@ -7,9 +7,11 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
+use std::path::Path;
 
 pub struct Game<'a> {
     sdl_context: & 'a sdl2::Sdl,
+    font: sdl2::ttf::Font<'a, 'static>,
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: sdl2::EventPump,
     state: GameState,
@@ -43,6 +45,7 @@ impl<'a> Game<'a> {
 
     pub fn new(
         sdl_context: &'a sdl2::Sdl,
+        ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
         bright_mode: bool,
         repeat_delay: Duration,
         repeat_interval: Duration,
@@ -84,8 +87,13 @@ impl<'a> Game<'a> {
             bg_color_2,
         };
 
+        // init font here
+        let font_path = Path::new(&"assets/FreeMono.ttf");
+        let font = ttf_context.load_font(font_path, 128)?;
+
         Ok(Game {
             sdl_context,
+            font,
             canvas,
             event_pump,
             state: GameState {
