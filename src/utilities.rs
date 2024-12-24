@@ -1,7 +1,7 @@
 use std::{time::Instant, usize};
 
-use sdl2::pixels::Color;
 use crate::tetrominos::Tetromino;
+use sdl2::pixels::Color;
 
 #[derive(Clone, Copy)]
 pub struct Cell {
@@ -22,13 +22,14 @@ pub struct Keystate {
 }
 
 pub struct Settings {
-    bright_mode: bool,
+    pub bright_mode: bool,
+    pub insta_das: bool,
 }
 
-pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10]; 20]) -> bool {
+pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32), map: &[[Cell; 10]; 20]) -> bool {
     for point in grid.iter() {
         let map_x: i32 = point[0] + position.0;
-        let map_y: i32  = point[1] + position.1;
+        let map_y: i32 = point[1] + position.1;
 
         if map_x < 0 || map_x >= 10 || map_y >= 20 {
             return true;
@@ -45,17 +46,21 @@ pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32) ,map: &[[Cell; 10
     false
 }
 
-pub fn lowest_avaliable_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> Tetromino {
-
+pub fn lowest_avaliable_position(
+    current_tetromino: &Tetromino,
+    map: &[[Cell; 10]; 20],
+) -> Tetromino {
     let mut result = Tetromino::new(current_tetromino.shape.clone());
     result.grid = current_tetromino.grid.clone();
     result.position = current_tetromino.position;
     result.rotation = current_tetromino.rotation;
 
-
     while result.position[1] < 19 {
-
-        if has_colided(&result.grid, &(result.position[0], result.position[1] + 1), map) {
+        if has_colided(
+            &result.grid,
+            &(result.position[0], result.position[1] + 1),
+            map,
+        ) {
             break;
         }
 
@@ -63,4 +68,32 @@ pub fn lowest_avaliable_position(current_tetromino: &Tetromino, map: &[[Cell; 10
     }
 
     result
+}
+
+pub fn left_most_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> (i32, i32) {
+    let mut current_position_x = current_tetromino.position[0];
+    let position_y = current_tetromino.position[1];
+    while !has_colided(
+        &current_tetromino.grid,
+        &(current_position_x, position_y),
+        map,
+    ) {
+        current_position_x -= 1;
+    }
+
+    (current_position_x + 1, position_y)
+}
+
+pub fn right_most_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> (i32, i32) {
+    let mut current_position_x = current_tetromino.position[0];
+    let position_y = current_tetromino.position[1];
+    while !has_colided(
+        &current_tetromino.grid,
+        &(current_position_x, position_y),
+        map,
+    ) {
+        current_position_x += 1;
+    }
+
+    (current_position_x - 1, position_y)
 }

@@ -1,5 +1,7 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
-use crate::utilities::{lowest_avaliable_position, Cell, Keystate, Theme};
+use crate::utilities::{
+    left_most_position, lowest_avaliable_position, right_most_position, Cell, Keystate, Settings, Theme
+};
 use core::f64;
 use sdl2::event::Event;
 use sdl2::keyboard::Scancode;
@@ -16,6 +18,7 @@ pub struct Game<'a> {
     event_pump: sdl2::EventPump,
     state: GameState,
     theme: Theme,
+    settings: Settings,
 }
 
 struct GameState {
@@ -87,6 +90,11 @@ impl<'a> Game<'a> {
             bg_color_2,
         };
 
+        let settings = Settings {
+            bright_mode: true,
+            insta_das: true,
+        };
+
         // init font here
         let font_path = Path::new(&"assets/FreeMono.ttf");
         let font = ttf_context.load_font(font_path, 22)?;
@@ -113,6 +121,7 @@ impl<'a> Game<'a> {
                 fall_interval,
             },
             theme,
+            settings,
         })
     }
 
@@ -349,13 +358,20 @@ impl<'a> Game<'a> {
             let time_since_last_repeat =
                 now.duration_since(key_states[&Scancode::Left].last_repeat_time);
 
-            if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
-                self.state.current_tetromino.left(&self.state.map);
-                key_states
-                    .get_mut(&Scancode::Left)
-                    .unwrap()
-                    .last_repeat_time = now;
-                moved = true;
+            if time_since_first_press >= repeat_delay {
+                if self.settings.insta_das {
+                    let current_tetromino = &mut self.state.current_tetromino;
+                    let new_position = left_most_position(current_tetromino, &self.state.map);
+                    current_tetromino.position = [new_position.0, new_position.1];
+                    moved = true;
+                } else if time_since_last_repeat >= repeat_interval {
+                    self.state.current_tetromino.left(&self.state.map);
+                    key_states
+                        .get_mut(&Scancode::Left)
+                        .unwrap()
+                        .last_repeat_time = now;
+                    moved = true;
+                }
             }
         }
 
@@ -365,13 +381,20 @@ impl<'a> Game<'a> {
             let time_since_last_repeat =
                 now.duration_since(key_states[&Scancode::Right].last_repeat_time);
 
-            if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
-                self.state.current_tetromino.right(&self.state.map);
-                key_states
-                    .get_mut(&Scancode::Right)
-                    .unwrap()
-                    .last_repeat_time = now;
-                moved = true;
+            if time_since_first_press >= repeat_delay {
+                if self.settings.insta_das {
+                    let current_tetromino = &mut self.state.current_tetromino;
+                    let new_position = right_most_position(current_tetromino, &self.state.map);
+                    current_tetromino.position = [new_position.0, new_position.1];
+                    moved = true;
+                } else if time_since_last_repeat >= repeat_interval {
+                    self.state.current_tetromino.right(&self.state.map);
+                    key_states
+                        .get_mut(&Scancode::Right)
+                        .unwrap()
+                        .last_repeat_time = now;
+                    moved = true;
+                }
             }
         }
 
