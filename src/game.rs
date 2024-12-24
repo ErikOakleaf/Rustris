@@ -343,7 +343,7 @@ impl<'a> Game<'a> {
         let repeat_delay = self.state.repeat_delay;
         let repeat_interval = self.state.repeat_interval;
 
-        if key_states[&Scancode::Left].is_pressed {
+        if key_states[&Scancode::Left].is_pressed && !key_states[&Scancode::Right].is_pressed {
             let time_since_first_press =
                 now.duration_since(key_states[&Scancode::Left].first_press_time);
             let time_since_last_repeat =
@@ -359,7 +359,7 @@ impl<'a> Game<'a> {
             }
         }
 
-        if key_states[&Scancode::Right].is_pressed {
+        if key_states[&Scancode::Right].is_pressed && !key_states[&Scancode::Left].is_pressed {
             let time_since_first_press =
                 now.duration_since(key_states[&Scancode::Right].first_press_time);
             let time_since_last_repeat =
@@ -741,12 +741,7 @@ impl<'a> Game<'a> {
 
         // clear the screen of previous hold tetromino
 
-        let rect: Rect = Rect::new(
-            x_offset - Self::CELL_SIZE as i32,
-            y_offset - Self::CELL_SIZE as i32,
-            Self::CELL_SIZE * 4,
-            Self::CELL_SIZE * 3,
-        );
+        let rect: Rect = Rect::new(0, 0, Self::CELL_SIZE * 8, 400);
         self.canvas.set_draw_color(self.theme.bg_color_1);
         let _ = self.canvas.fill_rect(rect);
         self.canvas.present();
@@ -788,8 +783,9 @@ impl<'a> Game<'a> {
         let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
         let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32 + (400);
 
-        let rect = Rect::new(0, 0, x_offset as u32, box_height);
+        let rect = Rect::new(0, y_offset, x_offset as u32, box_height);
 
         self.canvas.set_draw_color(self.theme.bg_color_1);
         let _ = self.canvas.fill_rect(rect);
