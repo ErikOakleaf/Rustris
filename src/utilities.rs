@@ -24,6 +24,7 @@ pub struct Keystate {
 pub struct Settings {
     pub bright_mode: bool,
     pub insta_das: bool,
+    pub insta_softdrop: bool,
 }
 
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32), map: &[[Cell; 10]; 20]) -> bool {

@@ -1,6 +1,7 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
-    left_most_position, lowest_avaliable_position, right_most_position, Cell, Keystate, Settings, Theme
+    left_most_position, lowest_avaliable_position, right_most_position, Cell, Keystate, Settings,
+    Theme,
 };
 use core::f64;
 use sdl2::event::Event;
@@ -93,6 +94,7 @@ impl<'a> Game<'a> {
         let settings = Settings {
             bright_mode: true,
             insta_das: true,
+            insta_softdrop: true,
         };
 
         // init font here
@@ -324,9 +326,17 @@ impl<'a> Game<'a> {
                     ..
                 } => {
                     if !repeat {
-                        let key_state = key_states.get_mut(&Scancode::Down).unwrap();
-                        key_state.is_pressed = true;
-                        key_state.first_press_time = Instant::now();
+                        if self.settings.insta_softdrop {
+                            self.state.current_tetromino = lowest_avaliable_position(
+                                &self.state.current_tetromino,
+                                &self.state.map,
+                            );
+                            moved = true;
+                        } else {
+                            let key_state = key_states.get_mut(&Scancode::Down).unwrap();
+                            key_state.is_pressed = true;
+                            key_state.first_press_time = Instant::now();
+                        }
                     }
                 }
                 Event::KeyUp {
