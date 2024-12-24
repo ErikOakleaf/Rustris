@@ -252,6 +252,17 @@ impl<'a> Game<'a> {
                     }
                 }
                 Event::KeyDown {
+                    scancode: Some(Scancode::V),
+                    repeat,
+                    ..
+                } => {
+                    if !repeat {
+                        let current_tetromino = &mut self.state.current_tetromino;
+                        current_tetromino.rotate_180(&self.state.map);
+                        moved = true;
+                    }
+                }
+                Event::KeyDown {
                     scancode: Some(Scancode::Space),
                     repeat,
                     ..

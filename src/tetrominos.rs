@@ -211,6 +211,11 @@ impl Tetromino {
         };
         (current, next)
     }
+
+    pub fn rotate_180(&mut self, map: &[[Cell; 10]; 20]) {
+        self.srs_rotate(true, map);
+        self.srs_rotate(true, map);
+    }
 }
 
 pub struct Bag {
