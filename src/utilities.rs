@@ -32,6 +32,7 @@ pub struct Lockdelay {
     pub lock_delay_duration: Duration,
     pub is_in_delay: bool,
     pub moves_done: u8,
+    pub ammount_fallen: u8,
 }
 
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32), map: &[[Cell; 10]; 20]) -> bool {

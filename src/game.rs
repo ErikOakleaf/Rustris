@@ -107,6 +107,7 @@ impl<'a> Game<'a> {
             lock_delay_duration: Duration::from_secs_f64(0.5),
             is_in_delay: false,
             moves_done: 0,
+            ammount_fallen: 0,
         };
 
         Ok(Game {
@@ -223,7 +224,6 @@ impl<'a> Game<'a> {
         {
             self.state.lock_delay.is_in_delay = true;
             self.state.lock_delay.lock_delay_timer = Instant::now();
-            println!("test123");
         }
 
         let current_tetromino = &mut self.state.current_tetromino;
@@ -241,7 +241,17 @@ impl<'a> Game<'a> {
             self.state.lock_delay.lock_delay_timer = Instant::now();
             self.state.fall_timer = Instant::now();
 
-            println!("yes");
+            // if the y position is lager then increase the y position and restart the lock delay
+            // if the tetromino has fallen more than 3 spaces.
+
+            if previous_position[1] < current_tetromino.position[1] {
+                self.state.lock_delay.ammount_fallen += 1;
+
+                if self.state.lock_delay.ammount_fallen > 3 {
+                    self.state.lock_delay.is_in_delay = false;
+                    self.state.lock_delay.moves_done = 0;
+                }
+            }
         }
 
         // if in lock delay check if the timer has surpassed and the tetromino is on the stack
