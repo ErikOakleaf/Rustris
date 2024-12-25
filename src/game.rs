@@ -1,7 +1,7 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
-    left_most_position, lowest_avaliable_position, right_most_position, Cell, Keystate, Settings,
-    Theme,
+    has_colided, left_most_position, lowest_avaliable_position, right_most_position, Cell,
+    Keystate, Settings, Theme,
 };
 use core::f64;
 use sdl2::event::Event;
@@ -192,25 +192,16 @@ impl<'a> Game<'a> {
             let current_tetromino = &mut self.state.current_tetromino;
 
             if current_tetromino.position[1] >= -1 {
-                for point in current_tetromino.grid.iter() {
-                    let pos_x = point[0] + current_tetromino.position[0];
-                    let pos_y = point[1] + current_tetromino.position[1];
-
-                    if pos_x >= 0 {
-                        let map = &self.state.map;
-
-                        if pos_y < -1 {
-                            return;
-                        }
-
-                        if (pos_y + 1) as usize > map.len() - 1
-                            || map[(pos_y + 1) as usize][pos_x as usize].occupied
-                        {
-                            self.set_tetromino();
-
-                            return;
-                        }
-                    }
+                if has_colided(
+                    &current_tetromino.grid,
+                    &(
+                        current_tetromino.position[0],
+                        current_tetromino.position[1] + 1,
+                    ),
+                    &self.state.map,
+                ) {
+                    self.set_tetromino();
+                    return;
                 }
             }
 
@@ -332,6 +323,7 @@ impl<'a> Game<'a> {
                                 &self.state.map,
                             );
                             moved = true;
+                            self.state.fall_timer = Instant::now();
                         } else {
                             let key_state = key_states.get_mut(&Scancode::Down).unwrap();
                             key_state.is_pressed = true;
