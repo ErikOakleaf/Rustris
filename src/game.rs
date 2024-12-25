@@ -1,7 +1,7 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
     has_colided, left_most_position, lowest_avaliable_position, right_most_position, Cell,
-    Keystate, Settings, Theme,
+    Keystate, Lockdelay, Settings, Theme,
 };
 use core::f64;
 use sdl2::event::Event;
@@ -37,6 +37,7 @@ struct GameState {
     pub is_holding: bool,
     pub repeat_delay: Duration,
     pub repeat_interval: Duration,
+    pub lock_delay: Lockdelay,
 }
 
 impl<'a> Game<'a> {
@@ -101,6 +102,13 @@ impl<'a> Game<'a> {
         let font_path = Path::new(&"assets/FreeMono.ttf");
         let font = ttf_context.load_font(font_path, 22)?;
 
+        let lock_delay = Lockdelay {
+            lock_delay_timer: Instant::now(),
+            lock_delay_duration: Duration::from_secs_f64(0.5),
+            is_in_delay: false,
+            moves_done: 0,
+        };
+
         Ok(Game {
             sdl_context,
             font,
@@ -121,6 +129,7 @@ impl<'a> Game<'a> {
                 repeat_delay,
                 repeat_interval,
                 fall_interval,
+                lock_delay,
             },
             theme,
             settings,
@@ -179,35 +188,79 @@ impl<'a> Game<'a> {
     }
 
     fn update(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
-        self.handle_input(key_states);
 
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
 
-        if self.state.fall_timer.elapsed() >= self.state.fall_interval {
-            // logic for setting pieces
-            // check if the cell below is occupied or is below the floor of the map
+        self.handle_input(key_states);
 
-            let current_tetromino = &mut self.state.current_tetromino;
+        let is_against_stack = has_colided(
+            &self.state.current_tetromino.grid,
+            &(
+                self.state.current_tetromino.position[0],
+                self.state.current_tetromino.position[1] + 1,
+            ),
+            &self.state.map,
+        );
 
-            if current_tetromino.position[1] >= -1 {
-                if has_colided(
-                    &current_tetromino.grid,
-                    &(
-                        current_tetromino.position[0],
-                        current_tetromino.position[1] + 1,
-                    ),
-                    &self.state.map,
-                ) {
-                    self.set_tetromino();
-                    return;
-                }
-            }
-
-            current_tetromino.fall();
+        if self.state.fall_timer.elapsed() >= self.state.fall_interval && !is_against_stack {
+            self.state.current_tetromino.fall();
             self.render_current_tetromino();
             self.state.fall_timer = Instant::now();
+        }
+
+        // set the lock delay timer here if the tetromino is touching the ground
+        
+        if has_colided(
+            &self.state.current_tetromino.grid,
+            &(
+                self.state.current_tetromino.position[0],
+                self.state.current_tetromino.position[1] + 1,
+            ),
+            &self.state.map,
+        ) && !self.state.lock_delay.is_in_delay
+        {
+            self.state.lock_delay.is_in_delay = true;
+            self.state.lock_delay.lock_delay_timer = Instant::now();
+            println!("test123");
+        }
+
+        let current_tetromino = &mut self.state.current_tetromino;
+
+        // if in lock delay and the tetromino has moved than increase the move counter
+
+        let previous_grid = &self.state.previous_position.0;
+        let previous_position = &self.state.previous_position.1;
+
+        if (*previous_grid != current_tetromino.grid
+            || *previous_position != current_tetromino.position)
+            && self.state.lock_delay.is_in_delay && self.state.lock_delay.moves_done < 15
+        {
+            self.state.lock_delay.moves_done += 1;
+            self.state.lock_delay.lock_delay_timer = Instant::now();
+            self.state.fall_timer = Instant::now();
+
+            println!("yes");
+        }
+
+        // if in lock delay check if the timer has surpassed and the tetromino is on the stack
+        // then set the tetromino
+
+        let is_in_lock_delay = self.state.lock_delay.is_in_delay;
+        let lock_delay_time = self.state.lock_delay.lock_delay_timer.elapsed();
+        let lock_delay_duration = self.state.lock_delay.lock_delay_duration;
+        let is_touching_stack = has_colided(
+            &current_tetromino.grid,
+            &(
+                current_tetromino.position[0],
+                current_tetromino.position[1] + 1,
+            ),
+            &self.state.map,
+        );
+
+        if is_in_lock_delay && lock_delay_time >= lock_delay_duration && is_touching_stack {
+            self.set_tetromino();
         }
     }
 
@@ -458,6 +511,10 @@ impl<'a> Game<'a> {
         self.render_score();
 
         self.state.fall_timer = Instant::now();
+
+        // reset lock delay
+        self.state.lock_delay.is_in_delay = false;
+        self.state.lock_delay.moves_done = 0;
     }
 
     fn hard_drop(&mut self) {

@@ -1,4 +1,4 @@
-use std::{time::Instant, usize};
+use std::{time::{Duration, Instant}, usize};
 
 use crate::tetrominos::Tetromino;
 use sdl2::pixels::Color;
@@ -25,6 +25,13 @@ pub struct Settings {
     pub bright_mode: bool,
     pub insta_das: bool,
     pub insta_softdrop: bool,
+}
+
+pub struct Lockdelay {
+    pub lock_delay_timer: Instant,
+    pub lock_delay_duration: Duration,
+    pub is_in_delay: bool,
+    pub moves_done: u8,
 }
 
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32), map: &[[Cell; 10]; 20]) -> bool {
@@ -68,7 +75,7 @@ pub fn lowest_avaliable_position(
         result.position[1] += 1;
     }
 
-    result
+    result 
 }
 
 pub fn left_most_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> (i32, i32) {
