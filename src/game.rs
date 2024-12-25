@@ -893,5 +893,11 @@ impl<'a> Game<'a> {
         let lines = &format!("Lines: {}", &self.state.lines_cleared).to_string();
 
         let _ = self.render_text(lines, lines_x, lines_y);
+
+        let level_x = 100;
+        let level_y = 750;
+        let level = &format!("Level: {}", &self.state.level).to_string();
+
+        let _ = self.render_text(level, level_x, level_y);
     }
 }
