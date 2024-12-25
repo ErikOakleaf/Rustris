@@ -169,8 +169,8 @@ impl<'a> Game<'a> {
 
         self.render_bg();
         self.render_preview_tetrominos();
-        self.render_current_tetromino();
         self.render_lowest_avaliable_tetromino();
+        self.render_current_tetromino();
         self.render_score();
 
         while self.state.run {
@@ -479,8 +479,8 @@ impl<'a> Game<'a> {
         }
 
         if moved {
-            self.render_current_tetromino();
             self.render_lowest_avaliable_tetromino();
+            self.render_current_tetromino();
         }
     }
 
@@ -516,8 +516,8 @@ impl<'a> Game<'a> {
 
         self.render_map();
         self.render_preview_tetrominos();
-        self.render_current_tetromino();
         self.render_lowest_avaliable_tetromino();
+        self.render_current_tetromino();
         self.render_score();
 
         self.state.fall_timer = Instant::now();
@@ -668,8 +668,8 @@ impl<'a> Game<'a> {
 
             self.render_hold_tetromino();
             self.render_preview_tetrominos();
-            self.render_current_tetromino();
             self.render_lowest_avaliable_tetromino();
+            self.render_current_tetromino();
         }
     }
 
@@ -770,7 +770,7 @@ impl<'a> Game<'a> {
             lowest_avaliable_position(&self.state.current_tetromino, &self.state.map);
         let mut render_color = tetromino.color;
 
-        render_color.a = 155;
+        render_color.a = 100;
 
         tetromino.color = render_color;
 
