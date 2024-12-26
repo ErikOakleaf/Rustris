@@ -15,7 +15,7 @@ pub struct Cell {
 pub struct Theme {
     pub bg_color_1: Color,
     pub bg_color_2: Color,
-    //pub tetromino_colors: [Color; 7],
+    pub text_color: Color,
 }
 
 pub struct Keystate {
@@ -152,6 +152,7 @@ pub fn render_center_box(
 pub fn render_text<'a>(
     canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
     font: &sdl2::ttf::Font<'a, 'static>,
+    text_color: Color,
     print_string: &String,
     x: i32,
     y: i32,
@@ -160,7 +161,7 @@ pub fn render_text<'a>(
 
     let surface = font
         .render(&print_string)
-        .blended(Color::RGBA(0, 0, 0, 255))
+        .blended(text_color)
         .map_err(|e| e.to_string())?;
 
     let texture = texture_creator

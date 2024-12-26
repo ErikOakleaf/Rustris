@@ -847,12 +847,12 @@ impl<'a> Game<'a> {
 
         match self.state.game_mode {
             Gamemode::Classic => {
-                let _ = render_text(self.canvas, &self.font, score, score_x, score_y);
-                let _ = render_text(self.canvas, &self.font, lines, lines_x, lines_y);
-                let _ = render_text(self.canvas, &self.font, level, level_x, level_y);
+                let _ = render_text(self.canvas, &self.font, self.theme.text_color, score, score_x, score_y);
+                let _ = render_text(self.canvas, &self.font, self.theme.text_color, lines, lines_x, lines_y);
+                let _ = render_text(self.canvas, &self.font, self.theme.text_color, level, level_x, level_y);
             }
             Gamemode::Lines40 => {
-                let _ = render_text(self.canvas, &self.font, lines, lines_x, lines_y);
+                let _ = render_text(self.canvas, &self.font, self.theme.text_color, lines, lines_x, lines_y);
             }
         }
     }
@@ -876,7 +876,7 @@ impl<'a> Game<'a> {
         )
         .to_string();
 
-        let _ = render_text(self.canvas, &self.font, time, time_x, time_y);
+        let _ = render_text(self.canvas, &self.font, self.theme.text_color, time, time_x, time_y);
     }
 
     fn check_40_lines_game_over_state(&mut self) {

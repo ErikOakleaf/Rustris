@@ -4,6 +4,7 @@ mod tetrominos;
 mod utilities;
 
 use game::Game;
+use menu::Menu;
 use sdl2::pixels::Color;
 use std::time::Duration;
 use utilities::{Gamemode, Theme};
@@ -15,19 +16,29 @@ fn main() -> Result<(), String> {
     let mut sdl = init_sdl()?;
     let theme = init_theme(false);
 
-    let mut game: Game = Game::new(
-        &sdl.0,
-        &sdl.1,
-        &mut sdl.2,
-        &mut sdl.3,
-        &theme,
-        repeat_delay,
-        repeat_interval,
-        fall_interval,
-        Gamemode::Lines40,
-    )?;
+    // init menu here
+    let options = vec![
+        "Classic".to_string(),
+        "40 Lines".to_string(),
+        "Options".to_string(),
+    ];
+    let mut menu = Menu::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, options)?;
 
-    game.run();
+    menu.run();
+
+    //let mut game: Game = Game::new(
+    //    &sdl.0,
+    //    &sdl.1,
+    //    &mut sdl.2,
+    //    &mut sdl.3,
+    //    &theme,
+    //    repeat_delay,
+    //    repeat_interval,
+    //    fall_interval,
+    //    Gamemode::Lines40,
+    //)?;
+    //
+    //game.run();
 
     Ok(())
 }
@@ -67,16 +78,22 @@ fn init_sdl() -> Result<
 }
 
 fn init_theme(light_mode: bool) -> Theme {
-    let (bg_color_1, bg_color_2) = if light_mode {
+    let (bg_color_1, bg_color_2, text_color) = if light_mode {
         (
             Color::RGBA(245, 245, 245, 255),
             Color::RGBA(255, 255, 255, 255),
+            Color::RGBA(0, 0, 0, 255),
         )
     } else {
-        (Color::RGBA(10, 10, 10, 255), Color::RGBA(0, 0, 0, 255))
+        (
+            Color::RGBA(10, 10, 10, 255),
+            Color::RGBA(0, 0, 0, 255),
+            Color::RGBA(255, 255, 255, 255),
+        )
     };
     Theme {
         bg_color_1,
         bg_color_2,
+        text_color,
     }
 }
