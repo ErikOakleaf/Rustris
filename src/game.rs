@@ -1,7 +1,7 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
     has_colided, left_most_position, lowest_avaliable_position, right_most_position, Cell,
-    Keystate, Lockdelay, Settings, Theme,
+    Gamemode, Keystate, Lockdelay, Settings, Theme,
 };
 use core::f64;
 use sdl2::event::Event;
@@ -24,6 +24,7 @@ pub struct Game<'a> {
 
 struct GameState {
     pub run: bool,
+    pub game_mode: Gamemode,
     pub map: [[Cell; 10]; 20],
     pub level: u32,
     pub bag: Bag,
@@ -32,6 +33,7 @@ struct GameState {
     pub hold: Option<Tetromino>,
     pub score: u32,
     pub lines_cleared: u32,
+    pub game_timer: Instant,
     pub fall_timer: Instant,
     pub fall_interval: Duration,
     pub is_holding: bool,
@@ -55,6 +57,7 @@ impl<'a> Game<'a> {
         repeat_delay: Duration,
         repeat_interval: Duration,
         fall_interval: Duration,
+        game_mode: Gamemode,
     ) -> Result<Self, String> {
         let video_subsystem = sdl_context.video()?;
         let mut window = video_subsystem
@@ -117,6 +120,7 @@ impl<'a> Game<'a> {
             event_pump,
             state: GameState {
                 run: true,
+                game_mode,
                 map,
                 bag,
                 level: 1,
@@ -125,6 +129,7 @@ impl<'a> Game<'a> {
                 previous_position,
                 hold: None,
                 score: 0,
+                game_timer: Instant::now(),
                 fall_timer: Instant::now(),
                 is_holding: false,
                 repeat_delay,
@@ -189,7 +194,6 @@ impl<'a> Game<'a> {
     }
 
     fn update(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
-
         // set the previous position of the current tetromino
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
@@ -212,7 +216,7 @@ impl<'a> Game<'a> {
         }
 
         // set the lock delay timer here if the tetromino is touching the ground
-        
+
         if has_colided(
             &self.state.current_tetromino.grid,
             &(
@@ -235,7 +239,8 @@ impl<'a> Game<'a> {
 
         if (*previous_grid != current_tetromino.grid
             || *previous_position != current_tetromino.position)
-            && self.state.lock_delay.is_in_delay && self.state.lock_delay.moves_done < 15
+            && self.state.lock_delay.is_in_delay
+            && self.state.lock_delay.moves_done < 15
         {
             self.state.lock_delay.moves_done += 1;
             self.state.lock_delay.lock_delay_timer = Instant::now();
@@ -271,6 +276,15 @@ impl<'a> Game<'a> {
 
         if is_in_lock_delay && lock_delay_time >= lock_delay_duration && is_touching_stack {
             self.set_tetromino();
+        }
+
+        // render the time that has transpired in the game
+
+        match self.state.game_mode {
+            Gamemode::Lines40 => {
+                self.render_time();
+            }
+            _ => {}
         }
     }
 
@@ -494,7 +508,6 @@ impl<'a> Game<'a> {
             // check for game over state
 
             if pos_y < 0 {
-                println!("Game over!");
                 self.state.run = false;
                 return;
             }
@@ -589,12 +602,15 @@ impl<'a> Game<'a> {
                 _ => 0,
             };
 
-            self.state.score += score;
-            self.set_level();
-            println!(
-                "Lines cleared: {}, Score: {}, Level: {}",
-                self.state.lines_cleared, self.state.score, self.state.level
-            );
+            match self.state.game_mode {
+                Gamemode::Classic => {
+                    self.state.score += score;
+                    self.set_level();
+                }
+                Gamemode::Lines40 => {
+                    self.check_40_lines_game_over_state();
+                }
+            }
         }
     }
 
@@ -886,18 +902,52 @@ impl<'a> Game<'a> {
         let score_y = 650;
         let score = &format!("Score: {}", &self.state.score).to_string();
 
-        let _ = self.render_text(score, score_x, score_y);
-
         let lines_x = 100;
         let lines_y = 700;
         let lines = &format!("Lines: {}", &self.state.lines_cleared).to_string();
-
-        let _ = self.render_text(lines, lines_x, lines_y);
 
         let level_x = 100;
         let level_y = 750;
         let level = &format!("Level: {}", &self.state.level).to_string();
 
-        let _ = self.render_text(level, level_x, level_y);
+        match self.state.game_mode {
+            Gamemode::Classic => {
+                let _ = self.render_text(score, score_x, score_y);
+                let _ = self.render_text(lines, lines_x, lines_y);
+                let _ = self.render_text(level, level_x, level_y);
+            }
+            Gamemode::Lines40 => {
+                let _ = self.render_text(lines, lines_x, lines_y);
+            }
+        }
+    }
+
+    fn render_time(&mut self) {
+        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+        let box_height: u32 = 50;
+        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+        let y_offset: i32 = 600;
+
+        let rect = Rect::new(0, y_offset, x_offset as u32, box_height);
+
+        self.canvas.set_draw_color(self.theme.bg_color_1);
+        let _ = self.canvas.fill_rect(rect);
+
+        let time_x = 100;
+        let time_y = 600;
+        let time = &format!(
+            "Time: {}",
+            &self.state.game_timer.elapsed().as_secs().to_string()
+        )
+        .to_string();
+
+        let _ = self.render_text(time, time_x, time_y);
+    }
+
+    fn check_40_lines_game_over_state(&mut self) {
+        if self.state.lines_cleared >= 40 {
+            self.state.run = false;
+            println!("40 line complete");
+        }
     }
 }

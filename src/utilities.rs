@@ -35,6 +35,11 @@ pub struct Lockdelay {
     pub ammount_fallen: u8,
 }
 
+pub enum Gamemode {
+    Classic,
+    Lines40,
+}
+
 pub fn has_colided(grid: &Vec<[i32; 2]>, position: &(i32, i32), map: &[[Cell; 10]; 20]) -> bool {
     for point in grid.iter() {
         let map_x: i32 = point[0] + position.0;
