@@ -148,3 +148,33 @@ pub fn render_center_box(
 
     canvas.present();
 }
+
+pub fn render_text<'a>(
+    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
+    font: &sdl2::ttf::Font<'a, 'static>,
+    print_string: &String,
+    x: i32,
+    y: i32,
+) -> Result<(), String> {
+    let texture_creator = canvas.texture_creator();
+
+    let surface = font
+        .render(&print_string)
+        .blended(Color::RGBA(0, 0, 0, 255))
+        .map_err(|e| e.to_string())?;
+
+    let texture = texture_creator
+        .create_texture_from_surface(&surface)
+        .map_err(|e| e.to_string())?;
+
+    let width = surface.width();
+    let height = surface.height();
+
+    let target_rect = Rect::new(x, y, width, height);
+
+    canvas.copy(&texture, None, Some(target_rect))?;
+
+    canvas.present();
+
+    Ok(())
+}

@@ -1,6 +1,6 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
-    has_colided, left_most_position, lowest_avaliable_position, render_bg, render_center_box, right_most_position, Cell, Gamemode, Keystate, Lockdelay, Settings, Theme
+    has_colided, left_most_position, lowest_avaliable_position, render_bg, render_center_box, render_text, right_most_position, Cell, Gamemode, Keystate, Lockdelay, Settings, Theme
 };
 use core::f64;
 use sdl2::event::Event;
@@ -858,30 +858,30 @@ impl<'a> Game<'a> {
         self.render_tetromino(hold_tetromino, x_offset, y_offset, false);
     }
 
-    fn render_text(&mut self, print_string: &String, x: i32, y: i32) -> Result<(), String> {
-        let texture_creator = self.canvas.texture_creator();
-
-        let surface = self
-            .font
-            .render(&print_string)
-            .blended(Color::RGBA(0, 0, 0, 255))
-            .map_err(|e| e.to_string())?;
-
-        let texture = texture_creator
-            .create_texture_from_surface(&surface)
-            .map_err(|e| e.to_string())?;
-
-        let width = surface.width();
-        let height = surface.height();
-
-        let target_rect = Rect::new(x, y, width, height);
-
-        self.canvas.copy(&texture, None, Some(target_rect))?;
-
-        self.canvas.present();
-
-        Ok(())
-    }
+    //fn render_text(&mut self, print_string: &String, x: i32, y: i32) -> Result<(), String> {
+    //    let texture_creator = self.canvas.texture_creator();
+    //
+    //    let surface = self
+    //        .font
+    //        .render(&print_string)
+    //        .blended(Color::RGBA(0, 0, 0, 255))
+    //        .map_err(|e| e.to_string())?;
+    //
+    //    let texture = texture_creator
+    //        .create_texture_from_surface(&surface)
+    //        .map_err(|e| e.to_string())?;
+    //
+    //    let width = surface.width();
+    //    let height = surface.height();
+    //
+    //    let target_rect = Rect::new(x, y, width, height);
+    //
+    //    self.canvas.copy(&texture, None, Some(target_rect))?;
+    //
+    //    self.canvas.present();
+    //
+    //    Ok(())
+    //}
 
     fn render_score(&mut self) {
         // clear the area of the screen that text is suposed to be renderd on
@@ -910,12 +910,12 @@ impl<'a> Game<'a> {
 
         match self.state.game_mode {
             Gamemode::Classic => {
-                let _ = self.render_text(score, score_x, score_y);
-                let _ = self.render_text(lines, lines_x, lines_y);
-                let _ = self.render_text(level, level_x, level_y);
+                let _ = render_text(self.canvas, &self.font, score, score_x, score_y);
+                let _ = render_text(self.canvas, &self.font, lines, lines_x, lines_y);
+                let _ = render_text(self.canvas, &self.font, level, level_x, level_y);
             }
             Gamemode::Lines40 => {
-                let _ = self.render_text(lines, lines_x, lines_y);
+                let _ = render_text(self.canvas, &self.font, lines, lines_x, lines_y);
             }
         }
     }
@@ -939,7 +939,7 @@ impl<'a> Game<'a> {
         )
         .to_string();
 
-        let _ = self.render_text(time, time_x, time_y);
+        let _ = render_text(self.canvas, &self.font, time, time_x, time_y);
     }
 
     fn check_40_lines_game_over_state(&mut self) {
