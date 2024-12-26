@@ -1,7 +1,6 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
-    has_colided, left_most_position, lowest_avaliable_position, right_most_position, Cell,
-    Gamemode, Keystate, Lockdelay, Settings, Theme,
+    has_colided, left_most_position, lowest_avaliable_position, render_bg, render_center_box, right_most_position, Cell, Gamemode, Keystate, Lockdelay, Settings, Theme
 };
 use core::f64;
 use sdl2::event::Event;
@@ -171,7 +170,7 @@ impl<'a> Game<'a> {
             ),
         ]);
 
-        self.render_bg();
+       render_bg(self.canvas, self.theme.bg_color_1, self.theme.bg_color_2, Self::CELL_SIZE, Self::GRID_WIDTH, Self::GRID_HEIGHT); 
         self.render_preview_tetrominos();
         self.render_lowest_avaliable_tetromino();
         self.render_current_tetromino();
@@ -547,28 +546,28 @@ impl<'a> Game<'a> {
         self.set_tetromino();
     }
 
-    fn render_bg(&mut self) {
-        self.canvas.set_draw_color(self.theme.bg_color_1);
-        self.canvas.clear();
-
-        //render background box in the middle of the screen
-
-        self.render_center_box();
-    }
-
-    fn render_center_box(&mut self) {
-        let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
-        let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-        let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
-        let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
-
-        self.canvas.set_draw_color(self.theme.bg_color_2);
-        let _ = self
-            .canvas
-            .fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
-
-        self.canvas.present();
-    }
+    //fn render_bg(&mut self) {
+    //    self.canvas.set_draw_color(self.theme.bg_color_1);
+    //    self.canvas.clear();
+    //
+    //    //render background box in the middle of the screen
+    //
+    //    self.render_center_box();
+    //}
+    //
+    //fn render_center_box(&mut self) {
+    //    let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
+    //    let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
+    //    let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+    //    let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
+    //
+    //    self.canvas.set_draw_color(self.theme.bg_color_2);
+    //    let _ = self
+    //        .canvas
+    //        .fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
+    //
+    //    self.canvas.present();
+    //}
 
     fn clear_lines(&mut self) {
         if let Some(first_full_line) = self.get_first_full_line() {
@@ -694,7 +693,7 @@ impl<'a> Game<'a> {
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
-        self.render_center_box();
+       render_center_box(self.canvas, self.theme.bg_color_2, Self::CELL_SIZE, Self::GRID_WIDTH, Self::GRID_HEIGHT); 
 
         let map = &self.state.map;
 

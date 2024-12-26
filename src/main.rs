@@ -1,6 +1,7 @@
 mod game;
 mod tetrominos;
 mod utilities;
+mod menu;
 
 use game::Game;
 use std::time::Duration;

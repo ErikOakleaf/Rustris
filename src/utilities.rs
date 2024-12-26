@@ -1,7 +1,10 @@
-use std::{time::{Duration, Instant}, usize};
+use std::{
+    time::{Duration, Instant},
+    usize,
+};
 
 use crate::tetrominos::Tetromino;
-use sdl2::pixels::Color;
+use sdl2::{pixels::Color, rect::Rect};
 
 #[derive(Clone, Copy)]
 pub struct Cell {
@@ -81,7 +84,7 @@ pub fn lowest_avaliable_position(
         result.position[1] += 1;
     }
 
-    result 
+    result
 }
 
 pub fn left_most_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]) -> (i32, i32) {
@@ -110,4 +113,38 @@ pub fn right_most_position(current_tetromino: &Tetromino, map: &[[Cell; 10]; 20]
     }
 
     (current_position_x - 1, position_y)
+}
+
+pub fn render_bg(
+    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
+    bg_color_1: Color,
+    bg_color_2: Color,
+    cell_size: u32,
+    grid_width: u32,
+    grid_height: u32,
+) {
+    canvas.set_draw_color(bg_color_1);
+    canvas.clear();
+
+    //render background box in the middle of the screen
+
+    render_center_box(canvas, bg_color_2, cell_size, grid_width, grid_height);
+}
+
+pub fn render_center_box(
+    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
+    bg_color_2: Color,
+    cell_size: u32,
+    grid_width: u32,
+    grid_height: u32,
+) {
+    let box_width: u32 = cell_size * grid_width;
+    let box_height: u32 = cell_size * grid_height;
+    let x_offset: i32 = ((canvas.window().size().0 / 2) - (box_width / 2)) as i32;
+    let y_offset: i32 = (canvas.window().size().1 - box_height) as i32;
+
+    canvas.set_draw_color(bg_color_2);
+    let _ = canvas.fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
+
+    canvas.present();
 }
