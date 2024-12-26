@@ -15,8 +15,8 @@ use std::time::{Duration, Instant};
 pub struct Game<'a> {
     sdl_context: &'a sdl2::Sdl,
     font: sdl2::ttf::Font<'a, 'static>,
-    canvas: sdl2::render::Canvas<sdl2::video::Window>,
-    event_pump: sdl2::EventPump,
+    canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
+    event_pump: &'a mut sdl2::EventPump,
     state: GameState,
     theme: Theme,
     settings: Settings,
@@ -53,6 +53,8 @@ impl<'a> Game<'a> {
     pub fn new(
         sdl_context: &'a sdl2::Sdl,
         ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
+        canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
+        event_pump: &'a mut sdl2::EventPump,
         bright_mode: bool,
         repeat_delay: Duration,
         repeat_interval: Duration,
@@ -70,9 +72,6 @@ impl<'a> Game<'a> {
             .set_minimum_size(Self::WINDOW_WIDTH, Self::WINDOW_HEIGHT)
             .map_err(|e| e.to_string())?;
 
-        let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
-        canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
-        let event_pump = sdl_context.event_pump()?;
         let map = [[Cell {
             color: None,
             occupied: false,
