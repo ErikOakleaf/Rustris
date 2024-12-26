@@ -5,7 +5,6 @@ use crate::utilities::{
 use core::f64;
 use sdl2::event::Event;
 use sdl2::keyboard::Scancode;
-use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use std::collections::HashMap;
 use std::path::Path;
@@ -17,7 +16,7 @@ pub struct Game<'a> {
     canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: &'a mut sdl2::EventPump,
     state: GameState,
-    theme: Theme,
+    theme: &'a Theme,
     settings: Settings,
 }
 
@@ -54,7 +53,7 @@ impl<'a> Game<'a> {
         ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
         canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
         event_pump: &'a mut sdl2::EventPump,
-        bright_mode: bool,
+        theme: &'a Theme,
         repeat_delay: Duration,
         repeat_interval: Duration,
         fall_interval: Duration,
@@ -78,20 +77,6 @@ impl<'a> Game<'a> {
         let mut bag = Bag::new();
         let current_tetromino = bag.next_tetromino();
         let previous_position = (vec![[0, 0]], [0, 0]);
-
-        let (bg_color_1, bg_color_2) = if bright_mode {
-            (
-                Color::RGBA(245, 245, 245, 255),
-                Color::RGBA(255, 255, 255, 255),
-            )
-        } else {
-            (Color::RGBA(10, 10, 10, 255), Color::RGBA(0, 0, 0, 255))
-        };
-
-        let theme = Theme {
-            bg_color_1,
-            bg_color_2,
-        };
 
         let settings = Settings {
             bright_mode: true,
@@ -546,29 +531,6 @@ impl<'a> Game<'a> {
         self.set_tetromino();
     }
 
-    //fn render_bg(&mut self) {
-    //    self.canvas.set_draw_color(self.theme.bg_color_1);
-    //    self.canvas.clear();
-    //
-    //    //render background box in the middle of the screen
-    //
-    //    self.render_center_box();
-    //}
-    //
-    //fn render_center_box(&mut self) {
-    //    let box_width: u32 = Self::CELL_SIZE * Self::GRID_WIDTH;
-    //    let box_height: u32 = Self::CELL_SIZE * Self::GRID_HEIGHT;
-    //    let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
-    //    let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
-    //
-    //    self.canvas.set_draw_color(self.theme.bg_color_2);
-    //    let _ = self
-    //        .canvas
-    //        .fill_rect(Rect::new(x_offset, y_offset, box_width, box_height));
-    //
-    //    self.canvas.present();
-    //}
-
     fn clear_lines(&mut self) {
         if let Some(first_full_line) = self.get_first_full_line() {
             let ammount_lines = self.get_subsequent_lines(first_full_line);
@@ -857,31 +819,6 @@ impl<'a> Game<'a> {
         self.render_map();
         self.render_tetromino(hold_tetromino, x_offset, y_offset, false);
     }
-
-    //fn render_text(&mut self, print_string: &String, x: i32, y: i32) -> Result<(), String> {
-    //    let texture_creator = self.canvas.texture_creator();
-    //
-    //    let surface = self
-    //        .font
-    //        .render(&print_string)
-    //        .blended(Color::RGBA(0, 0, 0, 255))
-    //        .map_err(|e| e.to_string())?;
-    //
-    //    let texture = texture_creator
-    //        .create_texture_from_surface(&surface)
-    //        .map_err(|e| e.to_string())?;
-    //
-    //    let width = surface.width();
-    //    let height = surface.height();
-    //
-    //    let target_rect = Rect::new(x, y, width, height);
-    //
-    //    self.canvas.copy(&texture, None, Some(target_rect))?;
-    //
-    //    self.canvas.present();
-    //
-    //    Ok(())
-    //}
 
     fn render_score(&mut self) {
         // clear the area of the screen that text is suposed to be renderd on

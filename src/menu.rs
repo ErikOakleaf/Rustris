@@ -1,3 +1,5 @@
+use crate::utilities::render_bg;
+
 struct Menu<'a> {
     sdl_context: &'a sdl2::Sdl,
     ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
@@ -8,6 +10,5 @@ struct Menu<'a> {
 
 impl<'a> Menu<'a> {
     pub fn render_options (&mut self) {
-
     }
 }
