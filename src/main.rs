@@ -4,7 +4,7 @@ mod tetrominos;
 mod utilities;
 
 use game::Game;
-use menu::Menu;
+use menu::{Menu, MenuManager, MenuNode, MenuOption};
 use sdl2::pixels::Color;
 use std::time::Duration;
 use utilities::{Gamemode, Theme};
@@ -16,15 +16,47 @@ fn main() -> Result<(), String> {
     let mut sdl = init_sdl()?;
     let theme = init_theme(false);
 
-    // init menu here
-    let options = vec![
-        "Classic".to_string(),
-        "40 Lines".to_string(),
-        "Options".to_string(),
-    ];
-    let mut menu = Menu::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, options)?;
+    let classic_action = || println!("yadi yadi yadi action thing");
 
-    menu.run();
+    let main_menu = MenuNode {
+        title: "Main Menu".to_string(),
+        options: vec![
+            MenuOption::Action {
+                name: "Classic".to_string(),
+                action: &classic_action,
+            },
+            MenuOption::Submenu {
+                name: "Options".to_string(),
+                submenu_index: 1, 
+            },
+        ],
+        parent: None, 
+    };
+
+    let options_menu = MenuNode {
+        title: "Options".to_string(),
+        options: vec![MenuOption::Action {
+            name: "Change Keybindings".to_string(),
+            action: &|| println!("Keybinding configuration coming soon!"),
+        }],
+        parent: Some(0), 
+    };
+
+    let menus = vec![main_menu, options_menu];
+
+    let mut menu_manager: MenuManager = MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, menus)?;  
+
+    menu_manager.run();
+
+    //// init menu here
+    //let options = vec![
+    //    "Classic".to_string(),
+    //    "40 Lines".to_string(),
+    //    "Options".to_string(),
+    //];
+    //let mut menu = Menu::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, options)?;
+    //
+    //menu.run();
 
     //let mut game: Game = Game::new(
     //    &sdl.0,
