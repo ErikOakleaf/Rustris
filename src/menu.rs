@@ -1,8 +1,11 @@
-use std::path::Path;
+use std::{path::Path, time::Duration};
 
 use sdl2::{event::Event, keyboard::Keycode};
 
-use crate::utilities::{render_bg, render_text, Theme};
+use crate::{
+    game::Game,
+    utilities::{render_bg, render_text, Gamemode, Theme},
+};
 
 pub struct Menu<'a> {
     sdl_context: &'a sdl2::Sdl,
@@ -12,6 +15,7 @@ pub struct Menu<'a> {
     event_pump: &'a mut sdl2::EventPump,
     theme: &'a Theme,
     options: Vec<String>,
+    current_index: usize,
 }
 
 impl<'a> Menu<'a> {
@@ -38,10 +42,11 @@ impl<'a> Menu<'a> {
             event_pump,
             theme,
             options,
+            current_index: 0,
         })
     }
 
-    pub fn render_options(&mut self) {
+    fn render_options(&mut self) {
         render_bg(
             self.canvas,
             self.theme.bg_color_1,
@@ -55,9 +60,65 @@ impl<'a> Menu<'a> {
         let mut options_y = 300;
 
         for option in self.options.iter() {
-            let _ = render_text(self.canvas, &self.font, self.theme.text_color, &option, options_x, options_y);
+            let prefix = match option {
+                _ if *option == self.options[self.current_index] => "> ".to_string(),
+                _ => "  ".to_string(),
+            };
+
+            let print_string = prefix + option;
+
+            let _ = render_text(
+                self.canvas,
+                &self.font,
+                self.theme.text_color,
+                &print_string,
+                options_x,
+                options_y,
+            );
 
             options_y += 50;
+        }
+    }
+
+    fn move_index(&mut self, next: bool) {
+        if self.options.is_empty() {
+            return;
+        }
+
+        self.current_index = if next {
+            self.current_index.saturating_add(1)
+        } else {
+            self.current_index.saturating_sub(1)
+        }
+        .min(self.options.len() - 1);
+
+        self.render_options();
+    }
+
+    fn select(&mut self) {
+        match self.current_index {
+            0 => {
+                let repeat_delay: Duration = Duration::from_millis(100);
+                let repeat_interval: Duration = Duration::from_millis(20);
+                let fall_interval: Duration = Duration::from_millis(20);
+                let game_mode = Gamemode::Classic;
+
+                match Game::new(
+                    self.sdl_context,
+                    self.ttf_context,
+                    self.canvas,
+                    self.event_pump,
+                    self.theme,
+                    repeat_delay,
+                    repeat_interval,
+                    fall_interval,
+                    game_mode,
+                ) {
+                    Ok(mut game) => game.run(),
+                    Err(e) => println!("Failed to create game: {}", e),
+                }
+            }
+            _ => {}
         }
     }
 
@@ -65,13 +126,37 @@ impl<'a> Menu<'a> {
         self.render_options();
 
         'running: loop {
-            for event in self.event_pump.poll_iter() {
+            let events: Vec<Event> = self.event_pump.poll_iter().collect();
+
+            for event in events {
                 match event {
                     Event::Quit { .. }
                     | Event::KeyDown {
                         keycode: Some(Keycode::Escape),
                         ..
                     } => break 'running,
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Up),
+                        ..
+                    } => {
+                        // Call self.move_index after the borrow ends
+                        self.move_index(false);
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Down),
+                        ..
+                    } => {
+                        // Call self.move_index after the borrow ends
+                        self.move_index(true);
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Space),
+                        ..
+                    } => {
+                        // Call self.move_index after the borrow ends
+                        self.select();
+                        println!("selected");
+                    }
                     _ => {}
                 }
             }
