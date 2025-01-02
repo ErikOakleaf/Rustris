@@ -27,24 +27,30 @@ fn main() -> Result<(), String> {
             },
             MenuOption::Submenu {
                 name: "Options".to_string(),
-                submenu_index: 1, 
+                submenu_index: 1,
             },
         ],
-        parent: None, 
+        parent: None,
     };
 
     let options_menu = MenuNode {
         title: "Options".to_string(),
-        options: vec![MenuOption::Action {
-            name: "Change Keybindings".to_string(),
-            action: &|| println!("Keybinding configuration coming soon!"),
-        }],
-        parent: Some(0), 
+        options: vec![
+            MenuOption::Action {
+                name: "Change Keybindings".to_string(),
+                action: &|| println!("Keybinding configuration coming soon!"),
+            },
+            MenuOption::Back {
+                name: "Back to Main Menu".to_string(),
+            },
+        ],
+        parent: Some(0),
     };
 
     let menus = vec![main_menu, options_menu];
 
-    let mut menu_manager: MenuManager = MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, menus)?;  
+    let mut menu_manager: MenuManager =
+        MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, menus)?;
 
     menu_manager.run();
 

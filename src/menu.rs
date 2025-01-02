@@ -10,6 +10,7 @@ use crate::{
 pub enum MenuOption<'a> {
     Action { name: String, action: &'a dyn Fn() },
     Submenu { name: String, submenu_index: usize },
+    Back { name: String },
 }
 
 pub struct MenuNode<'a> {
@@ -61,11 +62,13 @@ impl<'a> MenuManager<'a> {
 
     pub fn navigate_to_submenu(&mut self, submenu_index: usize) {
         self.current_menu = submenu_index;
+        self.render_current_menu();
     }
 
     pub fn back_to_parent(&mut self) {
         if let Some(parent_index) = self.menus[self.current_menu].parent {
             self.current_menu = parent_index;
+            self.render_current_menu();
         }
     }
 
@@ -73,6 +76,9 @@ impl<'a> MenuManager<'a> {
         match &self.menus[self.current_menu].options[option_index] {
             MenuOption::Action { action, .. } => action(),
             MenuOption::Submenu { submenu_index, .. } => self.navigate_to_submenu(*submenu_index),
+            MenuOption::Back { .. } => {
+                self.back_to_parent();
+            }
         }
     }
 
@@ -90,7 +96,7 @@ impl<'a> MenuManager<'a> {
         );
 
         // render title
-        
+
         let title_text = menu.title.clone();
 
         let _ = render_text(
@@ -103,7 +109,7 @@ impl<'a> MenuManager<'a> {
         );
 
         // render options
-        
+
         for (index, option) in menu.options.iter().enumerate() {
             let prefix = if index == self.current_index {
                 "> "
@@ -113,6 +119,7 @@ impl<'a> MenuManager<'a> {
             let name = match option {
                 MenuOption::Action { name, .. } => name,
                 MenuOption::Submenu { name, .. } => name,
+                MenuOption::Back { name, .. } => name,
             };
 
             let display_text = format!("{}{}", prefix, name);
