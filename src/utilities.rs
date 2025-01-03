@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::tetrominos::Tetromino;
-use sdl2::{pixels::Color, rect::Rect};
+use sdl2::{keyboard::Scancode, pixels::Color, rect::Rect};
 
 #[derive(Clone, Copy)]
 pub struct Cell {
@@ -28,6 +28,62 @@ pub struct Settings {
     pub bright_mode: bool,
     pub insta_das: bool,
     pub insta_softdrop: bool,
+    pub repeat_delay: Duration,
+    pub repeat_interval: Duration,
+    pub fall_interval: Duration,
+    pub key_bindings: KeyBindings,
+}
+
+impl Settings {
+    pub fn new() -> Result<Self, String> {
+        let bright_mode = true;
+        let insta_das = true;
+        let insta_softdrop = true;
+        let repeat_delay = Duration::from_millis(100);
+        let repeat_interval = Duration::from_millis(20);
+        let fall_interval = Duration::from_millis(20);
+
+        let move_left = Scancode::Left;
+        let move_right = Scancode::Right;
+        let rotate_clockwise = Scancode::Z;
+        let rotate_counter_clockwise = Scancode::X;
+        let rotate_180 = Scancode::V;
+        let hard_drop = Scancode::Space;
+        let soft_drop = Scancode::Down;
+        let hold = Scancode::C;
+
+        let key_bindings = KeyBindings {
+            move_left,
+            move_right,
+            rotate_clockwise,
+            rotate_counter_clockwise,
+            rotate_180,
+            hard_drop,
+            soft_drop,
+            hold,
+        };
+
+        Ok(Self {
+            bright_mode,
+            insta_das,
+            insta_softdrop,
+            repeat_delay,
+            repeat_interval,
+            fall_interval,
+            key_bindings,
+        })
+    }
+}
+
+pub struct KeyBindings {
+    pub move_left: Scancode,
+    pub move_right: Scancode,
+    pub rotate_clockwise: Scancode,
+    pub rotate_counter_clockwise: Scancode,
+    pub rotate_180: Scancode,
+    pub hard_drop: Scancode,
+    pub soft_drop: Scancode,
+    pub hold: Scancode,
 }
 
 pub struct Lockdelay {

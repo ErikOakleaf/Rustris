@@ -2,7 +2,7 @@ use std::path::Path;
 
 use sdl2::{event::Event, keyboard::Keycode};
 
-use crate::utilities::{render_bg, render_text, Theme};
+use crate::utilities::{render_bg, render_text, Settings, Theme};
 
 #[derive(Clone)]
 pub enum MenuOption<'a> {
@@ -35,6 +35,7 @@ pub struct MenuManager<'a> {
     menus: Vec<MenuNode<'a>>,
     current_menu: usize,
     current_index: usize,
+    pub settings: Settings,
 }
 
 impl<'a> MenuManager<'a> {
@@ -53,6 +54,8 @@ impl<'a> MenuManager<'a> {
         let font_path = Path::new(&"assets/FreeMono.ttf");
         let font = ttf_context.load_font(font_path, 22)?;
 
+        let settings = Settings::new().unwrap();
+
         Ok(MenuManager {
             sdl_context,
             ttf_context,
@@ -63,6 +66,7 @@ impl<'a> MenuManager<'a> {
             menus,
             current_menu: 0,
             current_index: 0,
+            settings,
         })
     }
 
@@ -195,15 +199,4 @@ impl<'a> MenuManager<'a> {
             }
         }
     }
-}
-
-pub struct Menu<'a> {
-    sdl_context: &'a sdl2::Sdl,
-    ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
-    font: sdl2::ttf::Font<'a, 'static>,
-    canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
-    event_pump: &'a mut sdl2::EventPump,
-    theme: &'a Theme,
-    options: Vec<String>,
-    current_index: usize,
 }

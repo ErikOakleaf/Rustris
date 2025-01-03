@@ -1,6 +1,7 @@
 use crate::tetrominos::{Bag, Shape, Tetromino};
 use crate::utilities::{
-    has_colided, left_most_position, lowest_avaliable_position, render_bg, render_center_box, render_text, right_most_position, Cell, Gamemode, Keystate, Lockdelay, Settings, Theme
+    has_colided, left_most_position, lowest_avaliable_position, render_bg, render_center_box,
+    render_text, right_most_position, Cell, Gamemode, Keystate, Lockdelay, Settings, Theme,
 };
 use core::f64;
 use sdl2::event::Event;
@@ -17,7 +18,7 @@ pub struct Game<'a> {
     event_pump: &'a mut sdl2::EventPump,
     state: GameState,
     theme: &'a Theme,
-    settings: Settings,
+    settings: &'a Settings,
 }
 
 struct GameState {
@@ -58,6 +59,7 @@ impl<'a> Game<'a> {
         repeat_interval: Duration,
         fall_interval: Duration,
         game_mode: Gamemode,
+        settings: &'a Settings,
     ) -> Result<Self, String> {
         let video_subsystem = sdl_context.video()?;
         let mut window = video_subsystem
@@ -77,12 +79,6 @@ impl<'a> Game<'a> {
         let mut bag = Bag::new();
         let current_tetromino = bag.next_tetromino();
         let previous_position = (vec![[0, 0]], [0, 0]);
-
-        let settings = Settings {
-            bright_mode: true,
-            insta_das: true,
-            insta_softdrop: true,
-        };
 
         // init font here
         let font_path = Path::new(&"assets/FreeMono.ttf");
@@ -127,10 +123,12 @@ impl<'a> Game<'a> {
 
     pub fn run(&mut self) {
         let target_frame_duration: i32 = 1000 / 60;
+        
+        let key_bindings = &self.settings.key_bindings;
 
         let mut key_states: HashMap<Scancode, Keystate> = HashMap::from([
             (
-                Scancode::Left,
+                key_bindings.move_left,
                 Keystate {
                     is_pressed: false,
                     first_press_time: Instant::now(),
@@ -138,7 +136,7 @@ impl<'a> Game<'a> {
                 },
             ),
             (
-                Scancode::Right,
+                key_bindings.move_right,
                 Keystate {
                     is_pressed: false,
                     first_press_time: Instant::now(),
@@ -146,7 +144,7 @@ impl<'a> Game<'a> {
                 },
             ),
             (
-                Scancode::Down,
+                key_bindings.soft_drop,
                 Keystate {
                     is_pressed: false,
                     first_press_time: Instant::now(),
@@ -155,7 +153,14 @@ impl<'a> Game<'a> {
             ),
         ]);
 
-       render_bg(self.canvas, self.theme.bg_color_1, self.theme.bg_color_2, Self::CELL_SIZE, Self::GRID_WIDTH, Self::GRID_HEIGHT); 
+        render_bg(
+            self.canvas,
+            self.theme.bg_color_1,
+            self.theme.bg_color_2,
+            Self::CELL_SIZE,
+            Self::GRID_WIDTH,
+            Self::GRID_HEIGHT,
+        );
         self.render_preview_tetrominos();
         self.render_lowest_avaliable_tetromino();
         self.render_current_tetromino();
@@ -282,6 +287,8 @@ impl<'a> Game<'a> {
         let mut hard_drop: bool = false;
         let mut switch_hold_tetromino = false;
 
+        let key_bindings = &self.settings.key_bindings;
+
         for event in self.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -292,102 +299,58 @@ impl<'a> Game<'a> {
                     self.state.run = false;
                 }
                 Event::KeyDown {
-                    scancode: Some(Scancode::Z),
+                    scancode: Some(scancode),
                     repeat,
                     ..
                 } => {
                     if !repeat {
-                        let current_tetromino = &mut self.state.current_tetromino;
-                        current_tetromino.srs_rotate(false, &self.state.map);
-                        moved = true;
-                    }
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::X),
-                    repeat,
-                    ..
-                } => {
-                    if !repeat {
-                        let current_tetromino = &mut self.state.current_tetromino;
-                        current_tetromino.srs_rotate(true, &self.state.map);
-                        moved = true;
-                    }
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::V),
-                    repeat,
-                    ..
-                } => {
-                    if !repeat {
-                        let current_tetromino = &mut self.state.current_tetromino;
-                        current_tetromino.rotate_180(&self.state.map);
-                        moved = true;
-                    }
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::Space),
-                    repeat,
-                    ..
-                } => {
-                    if !repeat {
-                        hard_drop = true;
-                    }
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::C),
-                    ..
-                } => {
-                    switch_hold_tetromino = true;
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::Left),
-                    repeat,
-                    ..
-                } => {
-                    if !repeat {
-                        let key_state = key_states.get_mut(&Scancode::Left).unwrap();
-                        key_state.is_pressed = true;
-                        key_state.first_press_time = Instant::now();
-
-                        let current_tetromino = &mut self.state.current_tetromino;
-                        current_tetromino.left(&self.state.map);
-
-                        moved = true;
-                    }
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::Right),
-                    repeat,
-                    ..
-                } => {
-                    if !repeat {
-                        let key_state = key_states.get_mut(&Scancode::Right).unwrap();
-                        key_state.is_pressed = true;
-                        key_state.first_press_time = Instant::now();
-
-                        let current_tetromino = &mut self.state.current_tetromino;
-                        current_tetromino.right(&self.state.map);
-
-                        moved = true;
-                    }
-                }
-                Event::KeyDown {
-                    scancode: Some(Scancode::Down),
-                    repeat,
-                    ..
-                } => {
-                    if !repeat {
-                        if self.settings.insta_softdrop {
-                            self.state.current_tetromino = lowest_avaliable_position(
-                                &self.state.current_tetromino,
-                                &self.state.map,
-                            );
-                            moved = true;
-                            self.state.fall_timer = Instant::now();
-                        } else {
-                            let key_state = key_states.get_mut(&Scancode::Down).unwrap();
+                        if scancode == key_bindings.move_left {
+                            let key_state = key_states.get_mut(&Scancode::Left).unwrap();
                             key_state.is_pressed = true;
                             key_state.first_press_time = Instant::now();
+
+                            let current_tetromino = &mut self.state.current_tetromino;
+                            current_tetromino.left(&self.state.map);
+
+                            moved = true;
+                        } else if scancode == key_bindings.move_right {
+                            let key_state = key_states.get_mut(&Scancode::Right).unwrap();
+                            key_state.is_pressed = true;
+                            key_state.first_press_time = Instant::now();
+
+                            let current_tetromino = &mut self.state.current_tetromino;
+                            current_tetromino.right(&self.state.map);
+
+                            moved = true;
+                        } else if scancode == key_bindings.soft_drop {
+                            if self.settings.insta_softdrop {
+                                self.state.current_tetromino = lowest_avaliable_position(
+                                    &self.state.current_tetromino,
+                                    &self.state.map,
+                                );
+                                moved = true;
+                                self.state.fall_timer = Instant::now();
+                            } else {
+                                let key_state = key_states.get_mut(&Scancode::Down).unwrap();
+                                key_state.is_pressed = true;
+                                key_state.first_press_time = Instant::now();
+                            }
+                        } else if scancode == key_bindings.hard_drop {
+                            hard_drop = true;
+                        } else if scancode == key_bindings.rotate_clockwise {
+                            let current_tetromino = &mut self.state.current_tetromino;
+                            current_tetromino.srs_rotate(false, &self.state.map);
+                            moved = true;
+                        } else if scancode == key_bindings.rotate_counter_clockwise {
+                            let current_tetromino = &mut self.state.current_tetromino;
+                            current_tetromino.srs_rotate(true, &self.state.map);
+                            moved = true;
+                        } else if scancode == key_bindings.rotate_180 {
+                            let current_tetromino = &mut self.state.current_tetromino;
+                            current_tetromino.rotate_180(&self.state.map);
+                            moved = true;
+                        } else if scancode == key_bindings.hold {
+                            switch_hold_tetromino = true;
                         }
                     }
                 }
@@ -655,7 +618,13 @@ impl<'a> Game<'a> {
         let x_offset: i32 = ((self.canvas.window().size().0 / 2) - (box_width / 2)) as i32;
         let y_offset: i32 = (self.canvas.window().size().1 - box_height) as i32;
 
-       render_center_box(self.canvas, self.theme.bg_color_2, Self::CELL_SIZE, Self::GRID_WIDTH, Self::GRID_HEIGHT); 
+        render_center_box(
+            self.canvas,
+            self.theme.bg_color_2,
+            Self::CELL_SIZE,
+            Self::GRID_WIDTH,
+            Self::GRID_HEIGHT,
+        );
 
         let map = &self.state.map;
 
@@ -847,12 +816,40 @@ impl<'a> Game<'a> {
 
         match self.state.game_mode {
             Gamemode::Classic => {
-                let _ = render_text(self.canvas, &self.font, self.theme.text_color, score, score_x, score_y);
-                let _ = render_text(self.canvas, &self.font, self.theme.text_color, lines, lines_x, lines_y);
-                let _ = render_text(self.canvas, &self.font, self.theme.text_color, level, level_x, level_y);
+                let _ = render_text(
+                    self.canvas,
+                    &self.font,
+                    self.theme.text_color,
+                    score,
+                    score_x,
+                    score_y,
+                );
+                let _ = render_text(
+                    self.canvas,
+                    &self.font,
+                    self.theme.text_color,
+                    lines,
+                    lines_x,
+                    lines_y,
+                );
+                let _ = render_text(
+                    self.canvas,
+                    &self.font,
+                    self.theme.text_color,
+                    level,
+                    level_x,
+                    level_y,
+                );
             }
             Gamemode::Lines40 => {
-                let _ = render_text(self.canvas, &self.font, self.theme.text_color, lines, lines_x, lines_y);
+                let _ = render_text(
+                    self.canvas,
+                    &self.font,
+                    self.theme.text_color,
+                    lines,
+                    lines_x,
+                    lines_y,
+                );
             }
         }
     }
@@ -876,7 +873,14 @@ impl<'a> Game<'a> {
         )
         .to_string();
 
-        let _ = render_text(self.canvas, &self.font, self.theme.text_color, time, time_x, time_y);
+        let _ = render_text(
+            self.canvas,
+            &self.font,
+            self.theme.text_color,
+            time,
+            time_x,
+            time_y,
+        );
     }
 
     fn check_40_lines_game_over_state(&mut self) {

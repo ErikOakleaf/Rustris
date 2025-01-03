@@ -4,15 +4,12 @@ mod tetrominos;
 mod utilities;
 
 use game::Game;
-use menu::{Menu, MenuManager, MenuNode, MenuOption};
+use menu::{MenuManager, MenuNode, MenuOption};
 use sdl2::pixels::Color;
 use std::time::Duration;
 use utilities::{Gamemode, Theme};
 
 fn main() -> Result<(), String> {
-    let repeat_delay: Duration = Duration::from_millis(100);
-    let repeat_interval: Duration = Duration::from_millis(20);
-    let fall_interval: Duration = Duration::from_millis(20);
     let mut sdl = init_sdl()?;
     let theme = init_theme(false);
 
@@ -30,7 +27,8 @@ fn main() -> Result<(), String> {
             repeat_delay,
             repeat_interval,
             fall_interval,
-            Gamemode::Lines40,
+            Gamemode::Classic,
+            &menu_manager.settings,
         );
 
         match game {
@@ -58,7 +56,9 @@ fn main() -> Result<(), String> {
         options: vec![
             MenuOption::Action {
                 name: "Change Keybindings".to_string(),
-                action: &|_menu_manager: &mut MenuManager| println!("Keybinding configuration coming soon!"),
+                action: &|_menu_manager: &mut MenuManager| {
+                    println!("Keybinding configuration coming soon!")
+                },
             },
             MenuOption::Back {
                 name: "Back to Main Menu".to_string(),
@@ -73,30 +73,6 @@ fn main() -> Result<(), String> {
         MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, menus)?;
 
     menu_manager.run();
-
-    //// init menu here
-    //let options = vec![
-    //    "Classic".to_string(),
-    //    "40 Lines".to_string(),
-    //    "Options".to_string(),
-    //];
-    //let mut menu = Menu::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, options)?;
-    //
-    //menu.run();
-
-    //let mut game: Game = Game::new(
-    //    &sdl.0,
-    //    &sdl.1,
-    //    &mut sdl.2,
-    //    &mut sdl.3,
-    //    &theme,
-    //    repeat_delay,
-    //    repeat_interval,
-    //    fall_interval,
-    //    Gamemode::Lines40,
-    //)?;
-    //
-    //game.run();
 
     Ok(())
 }
@@ -155,5 +131,3 @@ fn init_theme(light_mode: bool) -> Theme {
         text_color,
     }
 }
-
-fn start_classic() {}
