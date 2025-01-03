@@ -36,8 +36,6 @@ struct GameState {
     pub fall_timer: Instant,
     pub fall_interval: Duration,
     pub is_holding: bool,
-    pub repeat_delay: Duration,
-    pub repeat_interval: Duration,
     pub lock_delay: Lockdelay,
 }
 
@@ -55,8 +53,6 @@ impl<'a> Game<'a> {
         canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
         event_pump: &'a mut sdl2::EventPump,
         theme: &'a Theme,
-        repeat_delay: Duration,
-        repeat_interval: Duration,
         fall_interval: Duration,
         game_mode: Gamemode,
         settings: &'a Settings,
@@ -111,8 +107,6 @@ impl<'a> Game<'a> {
                 game_timer: Instant::now(),
                 fall_timer: Instant::now(),
                 is_holding: false,
-                repeat_delay,
-                repeat_interval,
                 fall_interval,
                 lock_delay,
             },
@@ -374,8 +368,8 @@ impl<'a> Game<'a> {
             self.switch_hold_tetromino();
         }
 
-        let repeat_delay = self.state.repeat_delay;
-        let repeat_interval = self.state.repeat_interval;
+        let repeat_delay = self.settings.repeat_delay;
+        let repeat_interval = self.settings.repeat_interval;
 
         if key_states[&Scancode::Left].is_pressed && !key_states[&Scancode::Right].is_pressed {
             let time_since_first_press =
@@ -430,7 +424,7 @@ impl<'a> Game<'a> {
                 now.duration_since(key_states[&Scancode::Right].last_repeat_time);
 
             if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
-                self.state.fall_interval = Duration::from_millis(20);
+                self.state.fall_interval = self.settings.fall_interval;
             }
         } else {
             let fall_seconds = (0.8 - ((self.state.level as f64 - 1.0) * 0.007))

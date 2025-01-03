@@ -14,8 +14,6 @@ fn main() -> Result<(), String> {
     let theme = init_theme(false);
 
     let classic_game = |menu_manager: &mut MenuManager| {
-        let repeat_delay = Duration::from_millis(100);
-        let repeat_interval = Duration::from_millis(20);
         let fall_interval = Duration::from_millis(20);
 
         let game = Game::new(
@@ -24,8 +22,6 @@ fn main() -> Result<(), String> {
             &mut menu_manager.canvas,
             &mut menu_manager.event_pump,
             &menu_manager.theme,
-            repeat_delay,
-            repeat_interval,
             fall_interval,
             Gamemode::Classic,
             &menu_manager.settings,
@@ -38,8 +34,6 @@ fn main() -> Result<(), String> {
     };
 
     let lines_40_game = |menu_manager: &mut MenuManager| {
-        let repeat_delay = Duration::from_millis(100);
-        let repeat_interval = Duration::from_millis(20);
         let fall_interval = Duration::from_millis(20);
 
         let game = Game::new(
@@ -48,8 +42,6 @@ fn main() -> Result<(), String> {
             &mut menu_manager.canvas,
             &mut menu_manager.event_pump,
             &menu_manager.theme,
-            repeat_delay,
-            repeat_interval,
             fall_interval,
             Gamemode::Lines40,
             &menu_manager.settings,
@@ -96,6 +88,26 @@ fn main() -> Result<(), String> {
                         "changing theme bright_mode: {}",
                         menu_manager.settings.bright_mode
                     );
+                },
+            },
+            MenuOption::Action {
+                name: "Instant DAS".to_string(),
+                action: &|menu_manager: &mut MenuManager| {
+                    if menu_manager.settings.insta_das {
+                        menu_manager.settings.insta_das = false;
+                    } else {
+                        menu_manager.settings.insta_das = true;
+                    }
+                },
+            },
+            MenuOption::Action {
+                name: "Instant Soft Drop".to_string(),
+                action: &|menu_manager: &mut MenuManager| {
+                    if menu_manager.settings.insta_softdrop {
+                        menu_manager.settings.insta_softdrop = false;
+                    } else {
+                        menu_manager.settings.insta_softdrop = true;
+                    }
                 },
             },
             MenuOption::Back {
