@@ -16,14 +16,34 @@ fn main() -> Result<(), String> {
     let mut sdl = init_sdl()?;
     let theme = init_theme(false);
 
-    let classic_action = || println!("yadi yadi yadi action thing");
+    let game_action = |menu_manager: &mut MenuManager| {
+        let repeat_delay = Duration::from_millis(100);
+        let repeat_interval = Duration::from_millis(20);
+        let fall_interval = Duration::from_millis(20);
 
+        let game = Game::new(
+            &menu_manager.sdl_context,
+            &menu_manager.ttf_context,
+            &mut menu_manager.canvas,
+            &mut menu_manager.event_pump,
+            &menu_manager.theme,
+            repeat_delay,
+            repeat_interval,
+            fall_interval,
+            Gamemode::Lines40,
+        );
+
+        match game {
+            Ok(mut g) => g.run(),
+            Err(e) => println!("Failed to start game: {}", e),
+        }
+    };
     let main_menu = MenuNode {
         title: "Main Menu".to_string(),
         options: vec![
             MenuOption::Action {
                 name: "Classic".to_string(),
-                action: &classic_action,
+                action: &game_action,
             },
             MenuOption::Submenu {
                 name: "Options".to_string(),
@@ -38,7 +58,7 @@ fn main() -> Result<(), String> {
         options: vec![
             MenuOption::Action {
                 name: "Change Keybindings".to_string(),
-                action: &|| println!("Keybinding configuration coming soon!"),
+                action: &|_menu_manager: &mut MenuManager| println!("Keybinding configuration coming soon!"),
             },
             MenuOption::Back {
                 name: "Back to Main Menu".to_string(),
@@ -135,3 +155,5 @@ fn init_theme(light_mode: bool) -> Theme {
         text_color,
     }
 }
+
+fn start_classic() {}

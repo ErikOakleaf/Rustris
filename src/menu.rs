@@ -1,16 +1,22 @@
-use std::{path::Path, time::Duration};
+use std::path::Path;
 
 use sdl2::{event::Event, keyboard::Keycode};
 
-use crate::{
-    game::Game,
-    utilities::{render_bg, render_center_box, render_text, Gamemode, Theme},
-};
+use crate::utilities::{render_bg, render_text, Theme};
 
+#[derive(Clone)]
 pub enum MenuOption<'a> {
-    Action { name: String, action: &'a dyn Fn() },
-    Submenu { name: String, submenu_index: usize },
-    Back { name: String },
+    Action {
+        name: String,
+        action: &'a dyn Fn(&mut MenuManager<'a>),
+    },
+    Submenu {
+        name: String,
+        submenu_index: usize,
+    },
+    Back {
+        name: String,
+    },
 }
 
 pub struct MenuNode<'a> {
@@ -20,12 +26,12 @@ pub struct MenuNode<'a> {
 }
 
 pub struct MenuManager<'a> {
-    sdl_context: &'a sdl2::Sdl,
-    ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
-    font: sdl2::ttf::Font<'a, 'static>,
-    canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
-    event_pump: &'a mut sdl2::EventPump,
-    theme: &'a Theme,
+    pub sdl_context: &'a sdl2::Sdl,
+    pub ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
+    pub font: sdl2::ttf::Font<'a, 'static>,
+    pub canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
+    pub event_pump: &'a mut sdl2::EventPump,
+    pub theme: &'a Theme,
     menus: Vec<MenuNode<'a>>,
     current_menu: usize,
     current_index: usize,
@@ -73,9 +79,11 @@ impl<'a> MenuManager<'a> {
     }
 
     pub fn select_option(&mut self, option_index: usize) {
-        match &self.menus[self.current_menu].options[option_index] {
-            MenuOption::Action { action, .. } => action(),
-            MenuOption::Submenu { submenu_index, .. } => self.navigate_to_submenu(*submenu_index),
+        let option = self.menus[self.current_menu].options[option_index].clone();
+
+        match option {
+            MenuOption::Action { action, .. } => action(self),
+            MenuOption::Submenu { submenu_index, .. } => self.navigate_to_submenu(submenu_index),
             MenuOption::Back { .. } => {
                 self.back_to_parent();
             }
