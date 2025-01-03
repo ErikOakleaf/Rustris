@@ -13,7 +13,7 @@ fn main() -> Result<(), String> {
     let mut sdl = init_sdl()?;
     let theme = init_theme(false);
 
-    let game_action = |menu_manager: &mut MenuManager| {
+    let classic_game = |menu_manager: &mut MenuManager| {
         let repeat_delay = Duration::from_millis(100);
         let repeat_interval = Duration::from_millis(20);
         let fall_interval = Duration::from_millis(20);
@@ -36,12 +36,41 @@ fn main() -> Result<(), String> {
             Err(e) => println!("Failed to start game: {}", e),
         }
     };
+
+    let lines_40_game = |menu_manager: &mut MenuManager| {
+        let repeat_delay = Duration::from_millis(100);
+        let repeat_interval = Duration::from_millis(20);
+        let fall_interval = Duration::from_millis(20);
+
+        let game = Game::new(
+            &menu_manager.sdl_context,
+            &menu_manager.ttf_context,
+            &mut menu_manager.canvas,
+            &mut menu_manager.event_pump,
+            &menu_manager.theme,
+            repeat_delay,
+            repeat_interval,
+            fall_interval,
+            Gamemode::Lines40,
+            &menu_manager.settings,
+        );
+
+        match game {
+            Ok(mut g) => g.run(),
+            Err(e) => println!("Failed to start game: {}", e),
+        }
+    };
+
     let main_menu = MenuNode {
         title: "Main Menu".to_string(),
         options: vec![
             MenuOption::Action {
                 name: "Classic".to_string(),
-                action: &game_action,
+                action: &classic_game,
+            },
+            MenuOption::Action {
+                name: "40 Lines".to_string(),
+                action: &lines_40_game,
             },
             MenuOption::Submenu {
                 name: "Options".to_string(),
@@ -55,9 +84,18 @@ fn main() -> Result<(), String> {
         title: "Options".to_string(),
         options: vec![
             MenuOption::Action {
-                name: "Change Keybindings".to_string(),
-                action: &|_menu_manager: &mut MenuManager| {
-                    println!("Keybinding configuration coming soon!")
+                name: "Bright Mode".to_string(),
+                action: &|menu_manager: &mut MenuManager| {
+                    if menu_manager.settings.bright_mode {
+                        menu_manager.settings.bright_mode = false;
+                    } else {
+                        menu_manager.settings.bright_mode = true;
+                    }
+                    menu_manager.theme = init_theme(menu_manager.settings.bright_mode);
+                    println!(
+                        "changing theme bright_mode: {}",
+                        menu_manager.settings.bright_mode
+                    );
                 },
             },
             MenuOption::Back {
@@ -70,7 +108,7 @@ fn main() -> Result<(), String> {
     let menus = vec![main_menu, options_menu];
 
     let mut menu_manager: MenuManager =
-        MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, &theme, menus)?;
+        MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, theme, menus)?;
 
     menu_manager.run();
 

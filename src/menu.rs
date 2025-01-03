@@ -31,7 +31,7 @@ pub struct MenuManager<'a> {
     pub font: sdl2::ttf::Font<'a, 'static>,
     pub canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
     pub event_pump: &'a mut sdl2::EventPump,
-    pub theme: &'a Theme,
+    pub theme: Theme,
     menus: Vec<MenuNode<'a>>,
     current_menu: usize,
     current_index: usize,
@@ -48,7 +48,7 @@ impl<'a> MenuManager<'a> {
         ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
         canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
         event_pump: &'a mut sdl2::EventPump,
-        theme: &'a Theme,
+        theme: Theme,
         menus: Vec<MenuNode<'a>>,
     ) -> Result<Self, String> {
         let font_path = Path::new(&"assets/FreeMono.ttf");
@@ -86,10 +86,19 @@ impl<'a> MenuManager<'a> {
         let option = self.menus[self.current_menu].options[option_index].clone();
 
         match option {
-            MenuOption::Action { action, .. } => action(self),
-            MenuOption::Submenu { submenu_index, .. } => self.navigate_to_submenu(submenu_index),
+            MenuOption::Action { action, .. } => {
+                action(self);
+                self.render_current_menu();
+            }
+            MenuOption::Submenu { submenu_index, .. } => {
+                self.navigate_to_submenu(submenu_index);
+                self.current_index = 0;
+                self.render_current_menu();
+            }
             MenuOption::Back { .. } => {
                 self.back_to_parent();
+                self.current_index = 0;
+                self.render_current_menu();
             }
         }
     }

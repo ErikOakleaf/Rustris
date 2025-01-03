@@ -36,7 +36,7 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Result<Self, String> {
-        let bright_mode = true;
+        let bright_mode = false;
         let insta_das = true;
         let insta_softdrop = true;
         let repeat_delay = Duration::from_millis(100);
