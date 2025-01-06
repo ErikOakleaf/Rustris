@@ -70,6 +70,10 @@ fn main() -> Result<(), String> {
                 name: "Options".to_string(),
                 submenu_index: 1,
             },
+            MenuOption::Submenu {
+                name: "Controls".to_string(),
+                submenu_index: 2,
+            },
         ],
         parent: None,
     };
@@ -79,9 +83,7 @@ fn main() -> Result<(), String> {
         options: vec![
             MenuOption::Action {
                 name: "Bright Mode".to_string(),
-                dynamic_value: Some(&|menu_manager| {
-                    menu_manager.settings.bright_mode.to_string()
-                }),
+                dynamic_value: Some(&|menu_manager| menu_manager.settings.bright_mode.to_string()),
                 action: &|menu_manager: &mut MenuManager| {
                     if menu_manager.settings.bright_mode {
                         menu_manager.settings.bright_mode = false;
@@ -97,7 +99,7 @@ fn main() -> Result<(), String> {
             },
             MenuOption::Action {
                 name: "Instant DAS".to_string(),
-                dynamic_value: None,
+                dynamic_value: Some(&|menu_manager| menu_manager.settings.insta_das.to_string()),
                 action: &|menu_manager: &mut MenuManager| {
                     if menu_manager.settings.insta_das {
                         menu_manager.settings.insta_das = false;
@@ -108,13 +110,37 @@ fn main() -> Result<(), String> {
             },
             MenuOption::Action {
                 name: "Instant Soft Drop".to_string(),
-                dynamic_value: None,
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager.settings.insta_softdrop.to_string()
+                }),
                 action: &|menu_manager: &mut MenuManager| {
                     if menu_manager.settings.insta_softdrop {
                         menu_manager.settings.insta_softdrop = false;
                     } else {
                         menu_manager.settings.insta_softdrop = true;
                     }
+                },
+            },
+            MenuOption::Action {
+                name: "Repeat Delay".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager.settings.repeat_delay.as_millis().to_string()
+                }),
+                action: &|menu_manager: &mut MenuManager| {
+                    println!("test");
+                },
+            },
+            MenuOption::Action {
+                name: "Repeat Interval".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .repeat_interval
+                        .as_millis()
+                        .to_string()
+                }),
+                action: &|menu_manager: &mut MenuManager| {
+                    println!("test");
                 },
             },
             MenuOption::Back {
@@ -124,7 +150,17 @@ fn main() -> Result<(), String> {
         parent: Some(0),
     };
 
-    let menus = vec![main_menu, options_menu];
+    let controls_menu = MenuNode {
+        title: "Options".to_string(),
+        options: vec![
+            MenuOption::Back {
+                name: "Back to Main Menu".to_string(),
+            },
+        ],
+        parent: Some(0),
+    };
+
+    let menus = vec![main_menu, options_menu, controls_menu];
 
     let mut menu_manager: MenuManager =
         MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, theme, menus)?;
