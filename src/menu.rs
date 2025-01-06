@@ -5,11 +5,17 @@ use sdl2::{event::Event, keyboard::Keycode};
 use crate::utilities::{render_bg, render_text, Settings, Theme};
 
 #[derive(Clone)]
+pub enum InteractionType<'a> {
+    Toggle(&'a dyn Fn(&mut MenuManager<'a>)),
+    Scrollable(&'a dyn Fn(&mut MenuManager<'a>, bool)),
+}
+
+#[derive(Clone)]
 pub enum MenuOption<'a> {
     Action {
         name: String,
         dynamic_value: Option<&'a dyn Fn(&MenuManager<'a>) -> String>,
-        action: &'a dyn Fn(&mut MenuManager<'a>),
+        action: InteractionType<'a>,
     },
     Submenu {
         name: String,
@@ -87,10 +93,13 @@ impl<'a> MenuManager<'a> {
         let option = self.menus[self.current_menu].options[option_index].clone();
 
         match option {
-            MenuOption::Action { action, .. } => {
-                action(self);
-                self.render_current_menu();
-            }
+            MenuOption::Action { action, .. } => match action {
+                InteractionType::Toggle(toggle_action) => {
+                    toggle_action(self);
+                    self.render_current_menu();
+                }
+                _ => {}
+            },
             MenuOption::Submenu { submenu_index, .. } => {
                 self.navigate_to_submenu(submenu_index);
                 self.current_index = 0;
@@ -101,6 +110,21 @@ impl<'a> MenuManager<'a> {
                 self.current_index = 0;
                 self.render_current_menu();
             }
+        }
+    }
+
+    pub fn scroll_option(&mut self, option_index: usize, direction: bool) {
+        let option = self.menus[self.current_menu].options[option_index].clone();
+
+        match option {
+            MenuOption::Action { action, .. } => match action {
+                InteractionType::Scrollable(scroll_action) => {
+                    scroll_action(self, direction);
+                    self.render_current_menu();
+                }
+                _ => {}
+            },
+            _ => {}
         }
     }
 
@@ -140,7 +164,9 @@ impl<'a> MenuManager<'a> {
             };
             let name = match option {
                 MenuOption::Action {
-                    name, dynamic_value, ..
+                    name,
+                    dynamic_value,
+                    ..
                 } => {
                     if let Some(getter) = dynamic_value {
                         // If there's a dynamic value, append it to the name
@@ -210,8 +236,19 @@ impl<'a> MenuManager<'a> {
                         ..
                     } => {
                         // Call self.move_index after the borrow ends
-                        println!("selected");
                         self.select_option(self.current_index);
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Left),
+                        ..
+                    } => {
+                        self.scroll_option(self.current_index, false);
+                    }
+                    Event::KeyDown {
+                        keycode: Some(Keycode::Right),
+                        ..
+                    } => {
+                        self.scroll_option(self.current_index, true);
                     }
                     _ => {}
                 }
