@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use sdl2::{event::Event, keyboard::Keycode};
+use sdl2::{
+    event::Event,
+    keyboard::{Keycode, Scancode},
+};
 
 use crate::utilities::{render_bg, render_text, Settings, Theme};
 
@@ -8,6 +11,7 @@ use crate::utilities::{render_bg, render_text, Settings, Theme};
 pub enum InteractionType<'a> {
     Toggle(&'a dyn Fn(&mut MenuManager<'a>)),
     Scrollable(&'a dyn Fn(&mut MenuManager<'a>, bool)),
+    Scancode(&'a dyn Fn(&mut MenuManager<'a>, Scancode)),
 }
 
 #[derive(Clone)]
@@ -221,22 +225,29 @@ impl<'a> MenuManager<'a> {
                         keycode: Some(Keycode::Up),
                         ..
                     } => {
-                        // Call self.move_index after the borrow ends
                         self.move_index(false);
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Down),
                         ..
                     } => {
-                        // Call self.move_index after the borrow ends
                         self.move_index(true);
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Space),
                         ..
                     } => {
-                        // Call self.move_index after the borrow ends
-                        self.select_option(self.current_index);
+                        let option =
+                            self.menus[self.current_menu].options[self.current_index].clone();
+
+                        match option {
+                            MenuOption::Action { action, .. } => match action {
+                                InteractionType::Scancode(..) => {}
+
+                                _ => self.select_option(self.current_index),
+                            },
+                            _ => self.select_option(self.current_index),
+                        }
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Left),
