@@ -58,10 +58,12 @@ fn main() -> Result<(), String> {
         options: vec![
             MenuOption::Action {
                 name: "Classic".to_string(),
+                dynamic_value: None,
                 action: &classic_game,
             },
             MenuOption::Action {
                 name: "40 Lines".to_string(),
+                dynamic_value: None,
                 action: &lines_40_game,
             },
             MenuOption::Submenu {
@@ -77,6 +79,9 @@ fn main() -> Result<(), String> {
         options: vec![
             MenuOption::Action {
                 name: "Bright Mode".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager.settings.bright_mode.to_string()
+                }),
                 action: &|menu_manager: &mut MenuManager| {
                     if menu_manager.settings.bright_mode {
                         menu_manager.settings.bright_mode = false;
@@ -92,6 +97,7 @@ fn main() -> Result<(), String> {
             },
             MenuOption::Action {
                 name: "Instant DAS".to_string(),
+                dynamic_value: None,
                 action: &|menu_manager: &mut MenuManager| {
                     if menu_manager.settings.insta_das {
                         menu_manager.settings.insta_das = false;
@@ -102,6 +108,7 @@ fn main() -> Result<(), String> {
             },
             MenuOption::Action {
                 name: "Instant Soft Drop".to_string(),
+                dynamic_value: None,
                 action: &|menu_manager: &mut MenuManager| {
                     if menu_manager.settings.insta_softdrop {
                         menu_manager.settings.insta_softdrop = false;

@@ -8,6 +8,7 @@ use crate::utilities::{render_bg, render_text, Settings, Theme};
 pub enum MenuOption<'a> {
     Action {
         name: String,
+        dynamic_value: Option<&'a dyn Fn(&MenuManager<'a>) -> String>,
         action: &'a dyn Fn(&mut MenuManager<'a>),
     },
     Submenu {
@@ -138,9 +139,18 @@ impl<'a> MenuManager<'a> {
                 "  "
             };
             let name = match option {
-                MenuOption::Action { name, .. } => name,
-                MenuOption::Submenu { name, .. } => name,
-                MenuOption::Back { name, .. } => name,
+                MenuOption::Action {
+                    name, dynamic_value, ..
+                } => {
+                    if let Some(getter) = dynamic_value {
+                        // If there's a dynamic value, append it to the name
+                        format!("{}: {}", name, getter(self))
+                    } else {
+                        name.clone()
+                    }
+                }
+                MenuOption::Submenu { name, .. } => name.clone(),
+                MenuOption::Back { name, .. } => name.clone(),
             };
 
             let display_text = format!("{}{}", prefix, name);
