@@ -11,7 +11,7 @@ use crate::utilities::{render_bg, render_text, Settings, Theme};
 pub enum InteractionType<'a> {
     Toggle(&'a dyn Fn(&mut MenuManager<'a>)),
     Scrollable(&'a dyn Fn(&mut MenuManager<'a>, bool)),
-    Scancode(&'a dyn Fn(&mut MenuManager<'a>, Scancode)),
+    Scancode(&'a str),
 }
 
 #[derive(Clone)]
@@ -100,6 +100,15 @@ impl<'a> MenuManager<'a> {
             MenuOption::Action { action, .. } => match action {
                 InteractionType::Toggle(toggle_action) => {
                     toggle_action(self);
+                    self.render_current_menu();
+                }
+                InteractionType::Scancode(scancode_string) => {
+                    let new_scancode = self.get_key_press();
+
+                    self.settings
+                        .key_bindings
+                        .update_binding(scancode_string, new_scancode);
+
                     self.render_current_menu();
                 }
                 _ => {}
@@ -208,6 +217,39 @@ impl<'a> MenuManager<'a> {
         self.render_current_menu();
     }
 
+    pub fn get_key_press(&mut self) -> Scancode {
+        render_bg(
+            self.canvas,
+            self.theme.bg_color_1,
+            self.theme.bg_color_2,
+            Self::CELL_SIZE,
+            Self::GRID_WIDTH,
+            Self::GRID_HEIGHT,
+        );
+
+        let _ = render_text(
+            self.canvas,
+            &self.font,
+            self.theme.text_color,
+            &"Press Key".to_string(),
+            350,
+            400,
+        );
+        loop {
+            let events: Vec<Event> = self.event_pump.poll_iter().collect();
+
+            for event in events {
+                if let Event::KeyDown {
+                    scancode: Some(scancode),
+                    ..
+                } = event
+                {
+                    return scancode;
+                }
+            }
+        }
+    }
+
     pub fn run(&mut self) {
         self.render_current_menu();
 
@@ -237,17 +279,7 @@ impl<'a> MenuManager<'a> {
                         keycode: Some(Keycode::Space),
                         ..
                     } => {
-                        let option =
-                            self.menus[self.current_menu].options[self.current_index].clone();
-
-                        match option {
-                            MenuOption::Action { action, .. } => match action {
-                                InteractionType::Scancode(..) => {}
-
-                                _ => self.select_option(self.current_index),
-                            },
-                            _ => self.select_option(self.current_index),
-                        }
+                        self.select_option(self.current_index);
                     }
                     Event::KeyDown {
                         keycode: Some(Keycode::Left),

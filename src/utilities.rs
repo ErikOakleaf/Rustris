@@ -86,6 +86,22 @@ pub struct KeyBindings {
     pub hold: Scancode,
 }
 
+impl KeyBindings {
+    pub fn update_binding(&mut self, key: &str, new_scancode: Scancode) {
+        match key {
+            "move_left" => self.move_left = new_scancode,
+            "move_right" => self.move_right = new_scancode,
+            "rotate_clockwise" => self.rotate_clockwise = new_scancode,
+            "rotate_counter_clockwise" => self.rotate_counter_clockwise = new_scancode,
+            "rotate_180" => self.rotate_180 = new_scancode,
+            "hard_drop" => self.hard_drop = new_scancode,
+            "soft_drop" => self.soft_drop = new_scancode,
+            "hold" => self.hold = new_scancode,
+            _ => println!("Invalid key binding name: {}", key),
+        }
+    }
+}
+
 pub struct Lockdelay {
     pub lock_delay_timer: Instant,
     pub lock_delay_duration: Duration,

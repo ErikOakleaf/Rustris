@@ -180,9 +180,23 @@ fn main() -> Result<(), String> {
 
     let controls_menu = MenuNode {
         title: "Options".to_string(),
-        options: vec![MenuOption::Back {
-            name: "Back to Main Menu".to_string(),
-        }],
+        options: vec![
+            MenuOption::Action {
+                name: "Move Left".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .move_left
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("move_left"),
+            },
+            MenuOption::Back {
+                name: "Back to Main Menu".to_string(),
+            },
+        ],
         parent: Some(0),
     };
 
