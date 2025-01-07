@@ -53,6 +53,8 @@ fn main() -> Result<(), String> {
         }
     };
 
+    // main menu
+
     let main_menu = MenuNode {
         title: "Main Menu".to_string(),
         options: vec![
@@ -77,6 +79,8 @@ fn main() -> Result<(), String> {
         ],
         parent: None,
     };
+
+    // options menu
 
     let options_menu = MenuNode {
         title: "Options".to_string(),
@@ -178,6 +182,8 @@ fn main() -> Result<(), String> {
         parent: Some(0),
     };
 
+    // menu for keybindings
+
     let controls_menu = MenuNode {
         title: "Options".to_string(),
         options: vec![
@@ -192,6 +198,90 @@ fn main() -> Result<(), String> {
                         .to_string()
                 }),
                 action: InteractionType::Scancode("move_left"),
+            },
+            MenuOption::Action {
+                name: "Move Right".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .move_right
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("move_right"),
+            },
+            MenuOption::Action {
+                name: "Rotate Clockwise".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .rotate_clockwise
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("rotate_clockwise"),
+            },
+            MenuOption::Action {
+                name: "Rotate Counter Clockwise".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .rotate_counter_clockwise
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("rotate_counter_clockwise"),
+            },
+            MenuOption::Action {
+                name: "Rotate 180".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .rotate_180
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("rotate_180"),
+            },
+            MenuOption::Action {
+                name: "Hard Drop".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .hard_drop
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("hard_drop"),
+            },
+            MenuOption::Action {
+                name: "Soft Drop".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .soft_drop
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("soft_drop"),
+            },
+            MenuOption::Action {
+                name: "Hold".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .hold
+                        .name()
+                        .to_string()
+                }),
+                action: InteractionType::Scancode("hold"),
             },
             MenuOption::Back {
                 name: "Back to Main Menu".to_string(),

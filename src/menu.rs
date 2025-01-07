@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, thread, time::Duration};
 
 use sdl2::{
     event::Event,
@@ -104,6 +104,26 @@ impl<'a> MenuManager<'a> {
                 }
                 InteractionType::Scancode(scancode_string) => {
                     let new_scancode = self.get_key_press();
+
+                    // if key is already used show so on the screen and return
+
+                    if self.settings.key_bindings.contains_scancode(new_scancode) {
+
+                        render_bg(
+                            self.canvas,
+                            self.theme.bg_color_1,
+                            self.theme.bg_color_2,
+                            Self::CELL_SIZE,
+                            Self::GRID_WIDTH,
+                            Self::GRID_HEIGHT,
+                        );
+
+                        let _ = render_text(self.canvas, &self.font, self.theme.text_color, &"Key is already being used".to_string(), 350, 400);
+                        thread::sleep(Duration::from_millis(500));
+
+                        self.render_current_menu();
+                        return;
+                    }
 
                     self.settings
                         .key_bindings

@@ -100,6 +100,16 @@ impl KeyBindings {
             _ => println!("Invalid key binding name: {}", key),
         }
     }
+    pub fn contains_scancode(&self, scancode: Scancode) -> bool {
+        self.move_left == scancode
+            || self.move_right == scancode
+            || self.rotate_clockwise == scancode
+            || self.rotate_counter_clockwise == scancode
+            || self.rotate_180 == scancode
+            || self.hard_drop == scancode
+            || self.soft_drop == scancode
+            || self.hold == scancode
+    }
 }
 
 pub struct Lockdelay {
