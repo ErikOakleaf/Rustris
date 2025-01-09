@@ -37,42 +37,48 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Result<Self, String> {
-        let bright_mode = false;
-        let insta_das = true;
-        let insta_softdrop = true;
-        let repeat_delay = Duration::from_millis(100);
-        let repeat_interval = Duration::from_millis(20);
-        let fall_interval = Duration::from_millis(20);
+        if std::path::Path::new("settings/keybinds.txt").exists()
+            && std::path::Path::new("settings/options.txt").exists()
+        {
+            Ok(Self::load()?)
+        } else {
+            let bright_mode = false;
+            let insta_das = true;
+            let insta_softdrop = true;
+            let repeat_delay = Duration::from_millis(100);
+            let repeat_interval = Duration::from_millis(20);
+            let fall_interval = Duration::from_millis(20);
 
-        let move_left = Scancode::Left;
-        let move_right = Scancode::Right;
-        let rotate_clockwise = Scancode::Z;
-        let rotate_counter_clockwise = Scancode::X;
-        let rotate_180 = Scancode::V;
-        let hard_drop = Scancode::Space;
-        let soft_drop = Scancode::Down;
-        let hold = Scancode::C;
+            let move_left = Scancode::Left;
+            let move_right = Scancode::Right;
+            let rotate_clockwise = Scancode::Z;
+            let rotate_counter_clockwise = Scancode::X;
+            let rotate_180 = Scancode::V;
+            let hard_drop = Scancode::Space;
+            let soft_drop = Scancode::Down;
+            let hold = Scancode::C;
 
-        let key_bindings = KeyBindings {
-            move_left,
-            move_right,
-            rotate_clockwise,
-            rotate_counter_clockwise,
-            rotate_180,
-            hard_drop,
-            soft_drop,
-            hold,
-        };
+            let key_bindings = KeyBindings {
+                move_left,
+                move_right,
+                rotate_clockwise,
+                rotate_counter_clockwise,
+                rotate_180,
+                hard_drop,
+                soft_drop,
+                hold,
+            };
 
-        Ok(Self {
-            bright_mode,
-            insta_das,
-            insta_softdrop,
-            repeat_delay,
-            repeat_interval,
-            fall_interval,
-            key_bindings,
-        })
+            Ok(Self {
+                bright_mode,
+                insta_das,
+                insta_softdrop,
+                repeat_delay,
+                repeat_interval,
+                fall_interval,
+                key_bindings,
+            })
+        }
     }
 
     pub fn save(&self) {
@@ -101,6 +107,48 @@ impl Settings {
 
         content = scancode_names.join("\n");
         let _ = fs::write(file_path, content);
+    }
+
+    fn load() -> Result<Self, String> {
+        // load options
+        let options_text_file = fs::read_to_string("settings/options.txt").unwrap();
+        let mut lines = options_text_file.lines();
+
+        let bright_mode: bool = lines.next().unwrap().parse().unwrap();
+        let insta_das: bool = lines.next().unwrap().parse().unwrap();
+        let insta_softdrop: bool = lines.next().unwrap().parse().unwrap();
+        let repeat_delay: Duration = Duration::from_millis(lines.next().unwrap().parse().unwrap());
+        let repeat_interval: Duration =
+            Duration::from_millis(lines.next().unwrap().parse().unwrap());
+        let fall_interval: Duration = Duration::from_millis(lines.next().unwrap().parse().unwrap());
+
+        // load keybindings
+        let scancodes_text_file = fs::read_to_string("settings/keybinds.txt").unwrap();
+        let scancodes: Vec<Scancode> = scancodes_text_file
+            .lines()
+            .filter_map(|line| Scancode::from_name(line))
+            .collect();
+
+        let key_bindings = KeyBindings {
+            move_left: scancodes[0],
+            move_right: scancodes[1],
+            rotate_clockwise: scancodes[2],
+            rotate_counter_clockwise: scancodes[3],
+            rotate_180: scancodes[4],
+            hard_drop: scancodes[5],
+            soft_drop: scancodes[6],
+            hold: scancodes[7],
+        };
+
+        Ok(Settings {
+            bright_mode,
+            insta_das,
+            insta_softdrop,
+            repeat_delay,
+            repeat_interval,
+            fall_interval,
+            key_bindings,
+        })
     }
 }
 
