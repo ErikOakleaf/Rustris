@@ -299,7 +299,9 @@ impl<'a> Game<'a> {
                 } => {
                     if !repeat {
                         if scancode == key_bindings.move_left {
-                            let key_state = key_states.get_mut(&self.settings.key_bindings.move_left).unwrap();
+                            let key_state = key_states
+                                .get_mut(&self.settings.key_bindings.move_left)
+                                .unwrap();
                             key_state.is_pressed = true;
                             key_state.first_press_time = Instant::now();
 
@@ -308,7 +310,9 @@ impl<'a> Game<'a> {
 
                             moved = true;
                         } else if scancode == key_bindings.move_right {
-                            let key_state = key_states.get_mut(&self.settings.key_bindings.move_right).unwrap();
+                            let key_state = key_states
+                                .get_mut(&self.settings.key_bindings.move_right)
+                                .unwrap();
                             key_state.is_pressed = true;
                             key_state.first_press_time = Instant::now();
 
@@ -325,7 +329,9 @@ impl<'a> Game<'a> {
                                 moved = true;
                                 self.state.fall_timer = Instant::now();
                             } else {
-                                let key_state = key_states.get_mut(&self.settings.key_bindings.soft_drop).unwrap();
+                                let key_state = key_states
+                                    .get_mut(&self.settings.key_bindings.soft_drop)
+                                    .unwrap();
                                 key_state.is_pressed = true;
                                 key_state.first_press_time = Instant::now();
                             }
@@ -396,11 +402,15 @@ impl<'a> Game<'a> {
             }
         }
 
-        if key_states[&self.settings.key_bindings.move_right].is_pressed && !key_states[&self.settings.key_bindings.move_left].is_pressed {
-            let time_since_first_press =
-                now.duration_since(key_states[&self.settings.key_bindings.move_right].first_press_time);
-            let time_since_last_repeat =
-                now.duration_since(key_states[&self.settings.key_bindings.move_right].last_repeat_time);
+        if key_states[&self.settings.key_bindings.move_right].is_pressed
+            && !key_states[&self.settings.key_bindings.move_left].is_pressed
+        {
+            let time_since_first_press = now.duration_since(
+                key_states[&self.settings.key_bindings.move_right].first_press_time,
+            );
+            let time_since_last_repeat = now.duration_since(
+                key_states[&self.settings.key_bindings.move_right].last_repeat_time,
+            );
 
             if time_since_first_press >= repeat_delay {
                 if self.settings.insta_das {
@@ -420,12 +430,17 @@ impl<'a> Game<'a> {
         }
 
         if key_states[&self.settings.key_bindings.soft_drop].is_pressed {
-            let time_since_first_press =
-                now.duration_since(key_states[&self.settings.key_bindings.move_right].first_press_time);
-            let time_since_last_repeat =
-                now.duration_since(key_states[&self.settings.key_bindings.move_right].last_repeat_time);
+            let time_since_first_press = now.duration_since(
+                key_states[&self.settings.key_bindings.move_right].first_press_time,
+            );
+            let time_since_last_repeat = now.duration_since(
+                key_states[&self.settings.key_bindings.move_right].last_repeat_time,
+            );
 
-            if time_since_first_press >= repeat_delay && time_since_last_repeat >= repeat_interval {
+            if time_since_first_press >= repeat_delay
+                && time_since_last_repeat >= repeat_interval
+                && self.settings.fall_interval < self.state.fall_interval
+            {
                 self.state.fall_interval = self.settings.fall_interval;
             }
         } else {
