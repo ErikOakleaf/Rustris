@@ -3,11 +3,14 @@ use crate::utilities::{
     has_colided, left_most_position, lowest_avaliable_position, render_bg, render_center_box,
     render_text, right_most_position, Cell, Gamemode, Keystate, Lockdelay, Settings, Theme,
 };
+use chrono::Local;
 use core::f64;
 use sdl2::event::Event;
 use sdl2::keyboard::Scancode;
 use sdl2::rect::Rect;
 use std::collections::HashMap;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -472,6 +475,7 @@ impl<'a> Game<'a> {
 
             if pos_y < 0 {
                 self.state.run = false;
+                self.save_score();
                 return;
             }
 
@@ -905,7 +909,7 @@ impl<'a> Game<'a> {
     fn check_40_lines_game_over_state(&mut self) {
         if self.state.lines_cleared >= 40 {
             self.state.run = false;
-            println!("40 line complete");
+            self.save_score();
         }
     }
 
@@ -913,5 +917,35 @@ impl<'a> Game<'a> {
         let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0);
         let fall_seconds = fall_seconds.max(1.0 / 60.0);
         Duration::from_secs_f64(fall_seconds)
+    }
+
+    fn save_score(&self) {
+        let _ = fs::create_dir_all("score");
+
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let (score, game_mode, file_path) = match self.state.game_mode {
+            Gamemode::Classic => (
+                self.state.score.to_string(),
+                "Classic".to_string(),
+                "score/classic.csv".to_string(),
+            ),
+            Gamemode::Lines40 => (
+                self.state.game_timer.elapsed().as_secs_f64().to_string(),
+                "Lines 40".to_string(),
+                "score/lines40.csv".to_string(),
+            ),
+        };
+
+        let csv_line = format!("{},{},{}\n", timestamp, game_mode, score);
+
+        let mut file = OpenOptions::new()
+            .append(true)
+            .create(true)
+            .open(file_path)
+            .expect("Failed to open or create score file");
+
+        let _ = file.write_all(csv_line.as_bytes());
     }
 }
