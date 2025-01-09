@@ -1,4 +1,5 @@
 use std::{
+    fs,
     time::{Duration, Instant},
     usize,
 };
@@ -73,6 +74,34 @@ impl Settings {
             key_bindings,
         })
     }
+
+    pub fn save(&self) {
+        let _ = fs::create_dir_all("settings");
+
+        // save settings to txt
+        let mut file_path = "settings/options.txt";
+        let mut content = format!(
+            "{}\n{}\n{}\n{}\n{}\n{}",
+            self.bright_mode,
+            self.insta_das,
+            self.insta_softdrop,
+            self.repeat_delay.as_millis(),
+            self.repeat_interval.as_millis(),
+            self.fall_interval.as_millis(),
+        );
+
+        let _ = fs::write(file_path, content);
+
+        // save keybinds to txt
+        file_path = "settings/keybinds.txt";
+        let scancode_names: [String; 8] = self
+            .key_bindings
+            .all_scancodes()
+            .map(|s| s.name().to_string());
+
+        content = scancode_names.join("\n");
+        let _ = fs::write(file_path, content);
+    }
 }
 
 pub struct KeyBindings {
@@ -109,6 +138,19 @@ impl KeyBindings {
             || self.hard_drop == scancode
             || self.soft_drop == scancode
             || self.hold == scancode
+    }
+
+    pub fn all_scancodes(&self) -> [Scancode; 8] {
+        [
+            self.move_left,
+            self.move_right,
+            self.rotate_clockwise,
+            self.rotate_counter_clockwise,
+            self.rotate_180,
+            self.hard_drop,
+            self.soft_drop,
+            self.hold,
+        ]
     }
 }
 

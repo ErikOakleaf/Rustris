@@ -141,6 +141,7 @@ impl<'a> MenuManager<'a> {
             MenuOption::Back { .. } => {
                 self.back_to_parent();
                 self.current_index = 0;
+                self.settings.save();
                 self.render_current_menu();
             }
         }
