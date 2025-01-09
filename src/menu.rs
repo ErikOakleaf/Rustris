@@ -5,7 +5,10 @@ use sdl2::{
     keyboard::{Keycode, Scancode},
 };
 
-use crate::{init_theme, utilities::{render_bg, render_text, Settings, Theme}};
+use crate::{
+    init_theme,
+    utilities::{render_bg, render_text, Settings, Theme},
+};
 
 #[derive(Clone)]
 pub enum InteractionType<'a> {
@@ -91,6 +94,7 @@ impl<'a> MenuManager<'a> {
         if let Some(parent_index) = self.menus[self.current_menu].parent {
             self.current_menu = parent_index;
             self.render_current_menu();
+            self.settings.save();
         }
     }
 
@@ -109,7 +113,6 @@ impl<'a> MenuManager<'a> {
                     // if key is already used show so on the screen and return
 
                     if self.settings.key_bindings.contains_scancode(new_scancode) {
-
                         render_bg(
                             self.canvas,
                             self.theme.bg_color_1,
@@ -119,7 +122,14 @@ impl<'a> MenuManager<'a> {
                             Self::GRID_HEIGHT,
                         );
 
-                        let _ = render_text(self.canvas, &self.font, self.theme.text_color, &"Key is already being used".to_string(), 350, 400);
+                        let _ = render_text(
+                            self.canvas,
+                            &self.font,
+                            self.theme.text_color,
+                            &"Key is already being used".to_string(),
+                            350,
+                            400,
+                        );
                         thread::sleep(Duration::from_millis(500));
 
                         self.render_current_menu();
@@ -142,7 +152,6 @@ impl<'a> MenuManager<'a> {
             MenuOption::Back { .. } => {
                 self.back_to_parent();
                 self.current_index = 0;
-                self.settings.save();
                 self.render_current_menu();
             }
         }
@@ -280,11 +289,17 @@ impl<'a> MenuManager<'a> {
 
             for event in events {
                 match event {
-                    Event::Quit { .. }
-                    | Event::KeyDown {
+                    Event::Quit { .. } => break 'running,
+                    Event::KeyDown {
                         keycode: Some(Keycode::Escape),
                         ..
-                    } => break 'running,
+                    } => {
+                        if self.current_menu == 0 {
+                            break 'running;
+                        } else {
+                            self.back_to_parent();
+                        }
+                    }
                     Event::KeyDown {
                         keycode: Some(Keycode::Up),
                         ..

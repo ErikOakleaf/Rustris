@@ -166,6 +166,29 @@ fn main() -> Result<(), String> {
                     },
                 ),
             },
+            MenuOption::Action {
+                name: "Soft Drop Interval".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager.settings.fall_interval.as_millis().to_string()
+                }),
+                action: InteractionType::Scrollable(
+                    &|menu_manager: &mut MenuManager, increase: bool| {
+                        if increase {
+                            menu_manager.settings.fall_interval = menu_manager
+                                .settings
+                                .fall_interval
+                                .checked_add(Duration::from_millis(1))
+                                .unwrap();
+                        } else {
+                            menu_manager.settings.fall_interval = menu_manager
+                                .settings
+                                .fall_interval
+                                .checked_sub(Duration::from_millis(1))
+                                .unwrap();
+                        }
+                    },
+                ),
+            },
             MenuOption::Back {
                 name: "Back to Main Menu".to_string(),
             },
