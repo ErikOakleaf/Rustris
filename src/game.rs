@@ -623,8 +623,14 @@ impl<'a> Game<'a> {
 
                 new_current_tetromino.position[0] = position_x;
                 new_current_tetromino.position[1] = position_y;
+
+                // store previous position for clearing the screen
+
                 self.state.hold = Some(new_hold_tetromino);
                 self.state.current_tetromino = new_current_tetromino;
+
+                self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
+                self.state.previous_position.1 = self.state.current_tetromino.position;
             }
             self.state.is_holding = true;
 
