@@ -180,11 +180,14 @@ impl<'a> Game<'a> {
     }
 
     fn update(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
-        // set the previous position of the current tetromino
+        self.handle_input(key_states);
+
+        // set the previous position in case the tetromino falls and needs to be renderd
+
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
         self.state.previous_position.1 = self.state.current_tetromino.position;
 
-        self.handle_input(key_states);
+
 
         let is_against_stack = has_colided(
             &self.state.current_tetromino.grid,
@@ -279,9 +282,13 @@ impl<'a> Game<'a> {
     }
 
     fn handle_input(&mut self, key_states: &mut HashMap<Scancode, Keystate>) {
-        // set the previous position of the current tetromino
+
+        // set the previous position in case of needing to render so the previous position can be
+        // cleared
+
         self.state.previous_position.0 = self.state.current_tetromino.grid.clone();
-        self.state.previous_position.1 = self.state.current_tetromino.position;
+                self.state.previous_position.1 = self.state.current_tetromino.position;
+
 
         let now = Instant::now();
 
