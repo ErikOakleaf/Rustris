@@ -35,6 +35,7 @@ struct GameState {
     pub game_timer: Instant,
     pub fall_timer: Instant,
     pub fall_interval: Duration,
+    pub level_fall_interval: Duration,
     pub is_holding: bool,
     pub lock_delay: Lockdelay,
 }
@@ -88,6 +89,8 @@ impl<'a> Game<'a> {
             ammount_fallen: 0,
         };
 
+        let level_fall_interval = Self::calculate_fall_duration(1);
+
         Ok(Game {
             sdl_context,
             font,
@@ -108,6 +111,7 @@ impl<'a> Game<'a> {
                 fall_timer: Instant::now(),
                 is_holding: false,
                 fall_interval,
+                level_fall_interval,
                 lock_delay,
             },
             theme,
@@ -232,7 +236,11 @@ impl<'a> Game<'a> {
             // if the tetromino has fallen more than 3 spaces.
 
             if previous_position[1] < current_tetromino.position[1] {
-                self.state.lock_delay.ammount_fallen += 1;
+                if let Some(new_value) = self.state.lock_delay.ammount_fallen.checked_add(1) {
+                    self.state.lock_delay.ammount_fallen = new_value;
+                } else {
+                    self.state.lock_delay.ammount_fallen = 4;
+                }
 
                 if self.state.lock_delay.ammount_fallen > 3 {
                     self.state.lock_delay.is_in_delay = false;
@@ -444,9 +452,7 @@ impl<'a> Game<'a> {
                 self.state.fall_interval = self.settings.fall_interval;
             }
         } else {
-            let fall_seconds = (0.8 - ((self.state.level as f64 - 1.0) * 0.007))
-                .powf(self.state.level as f64 - 1.0);
-            self.state.fall_interval = Duration::from_secs_f64(fall_seconds);
+            self.state.fall_interval = self.state.level_fall_interval;
         }
 
         if moved {
@@ -545,6 +551,8 @@ impl<'a> Game<'a> {
                     self.check_40_lines_game_over_state();
                 }
             }
+
+            self.state.level_fall_interval = Self::calculate_fall_duration(self.state.level);
         }
     }
 
@@ -899,5 +907,11 @@ impl<'a> Game<'a> {
             self.state.run = false;
             println!("40 line complete");
         }
+    }
+
+    pub fn calculate_fall_duration(level: u32) -> Duration {
+        let fall_seconds = (0.8 - ((level as f64 - 1.0) * 0.007)).powf(level as f64 - 1.0);
+        let fall_seconds = fall_seconds.max(1.0 / 60.0);
+        Duration::from_secs_f64(fall_seconds)
     }
 }
