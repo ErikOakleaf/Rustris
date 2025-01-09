@@ -5,7 +5,7 @@ use sdl2::{
     keyboard::{Keycode, Scancode},
 };
 
-use crate::utilities::{render_bg, render_text, Settings, Theme};
+use crate::{init_theme, utilities::{render_bg, render_text, Settings, Theme}};
 
 #[derive(Clone)]
 pub enum InteractionType<'a> {
@@ -59,13 +59,14 @@ impl<'a> MenuManager<'a> {
         ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
         canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
         event_pump: &'a mut sdl2::EventPump,
-        theme: Theme,
         menus: Vec<MenuNode<'a>>,
     ) -> Result<Self, String> {
         let font_path = Path::new(&"assets/FreeMono.ttf");
         let font = ttf_context.load_font(font_path, 22)?;
 
         let settings = Settings::new().unwrap();
+
+        let theme = init_theme(settings.bright_mode);
 
         Ok(MenuManager {
             sdl_context,

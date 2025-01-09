@@ -11,7 +11,6 @@ use utilities::{Gamemode, Theme};
 
 fn main() -> Result<(), String> {
     let mut sdl = init_sdl()?;
-    let theme = init_theme(false);
 
     let classic_game = |menu_manager: &mut MenuManager| {
         let fall_interval = Duration::from_millis(20);
@@ -89,16 +88,8 @@ fn main() -> Result<(), String> {
                 name: "Bright Mode".to_string(),
                 dynamic_value: Some(&|menu_manager| menu_manager.settings.bright_mode.to_string()),
                 action: InteractionType::Toggle(&|menu_manager: &mut MenuManager| {
-                    if menu_manager.settings.bright_mode {
-                        menu_manager.settings.bright_mode = false;
-                    } else {
-                        menu_manager.settings.bright_mode = true;
-                    }
+                    menu_manager.settings.bright_mode = !menu_manager.settings.bright_mode;
                     menu_manager.theme = init_theme(menu_manager.settings.bright_mode);
-                    println!(
-                        "changing theme bright_mode: {}",
-                        menu_manager.settings.bright_mode
-                    );
                 }),
             },
             MenuOption::Action {
@@ -274,12 +265,7 @@ fn main() -> Result<(), String> {
             MenuOption::Action {
                 name: "Hold".to_string(),
                 dynamic_value: Some(&|menu_manager| {
-                    menu_manager
-                        .settings
-                        .key_bindings
-                        .hold
-                        .name()
-                        .to_string()
+                    menu_manager.settings.key_bindings.hold.name().to_string()
                 }),
                 action: InteractionType::Scancode("hold"),
             },
@@ -293,7 +279,7 @@ fn main() -> Result<(), String> {
     let menus = vec![main_menu, options_menu, controls_menu];
 
     let mut menu_manager: MenuManager =
-        MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, theme, menus)?;
+        MenuManager::new(&sdl.0, &sdl.1, &mut sdl.2, &mut sdl.3, menus)?;
 
     menu_manager.run();
 
