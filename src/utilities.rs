@@ -32,6 +32,7 @@ pub struct Settings {
     pub repeat_delay: Duration,
     pub repeat_interval: Duration,
     pub fall_interval: Duration,
+    pub init_level: u32,
     pub key_bindings: KeyBindings,
 }
 
@@ -76,6 +77,7 @@ impl Settings {
                 repeat_delay,
                 repeat_interval,
                 fall_interval,
+                init_level: 1,
                 key_bindings,
             })
         }
@@ -87,13 +89,14 @@ impl Settings {
         // save settings to txt
         let mut file_path = "settings/options.txt";
         let mut content = format!(
-            "{}\n{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}",
             self.bright_mode,
             self.insta_das,
             self.insta_softdrop,
             self.repeat_delay.as_millis(),
             self.repeat_interval.as_millis(),
             self.fall_interval.as_millis(),
+            self.init_level.to_string(),
         );
 
         let _ = fs::write(file_path, content);
@@ -121,6 +124,7 @@ impl Settings {
         let repeat_interval: Duration =
             Duration::from_millis(lines.next().unwrap().parse().unwrap());
         let fall_interval: Duration = Duration::from_millis(lines.next().unwrap().parse().unwrap());
+        let init_level: u32 = lines.next().unwrap().parse().unwrap();
 
         // load keybindings
         let scancodes_text_file = fs::read_to_string("settings/keybinds.txt").unwrap();
@@ -147,6 +151,7 @@ impl Settings {
             repeat_delay,
             repeat_interval,
             fall_interval,
+            init_level,
             key_bindings,
         })
     }

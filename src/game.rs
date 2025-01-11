@@ -92,7 +92,7 @@ impl<'a> Game<'a> {
             ammount_fallen: 0,
         };
 
-        let level_fall_interval = Self::calculate_fall_duration(1);
+        let level_fall_interval = Self::calculate_fall_duration(settings.init_level);
 
         Ok(Game {
             sdl_context,
@@ -104,7 +104,7 @@ impl<'a> Game<'a> {
                 game_mode,
                 map,
                 bag,
-                level: 1,
+                level: settings.init_level,
                 lines_cleared: 0,
                 current_tetromino,
                 previous_position,
@@ -567,7 +567,7 @@ impl<'a> Game<'a> {
     }
 
     fn set_level(&mut self) {
-        self.state.level = (self.state.lines_cleared / 10) + 1;
+        self.state.level = ((self.state.lines_cleared / 10) + 1).max(self.settings.init_level);
     }
 
     fn get_first_full_line(&self) -> Option<usize> {

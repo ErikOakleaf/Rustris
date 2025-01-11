@@ -134,7 +134,8 @@ fn main() -> Result<(), String> {
                                 .settings
                                 .repeat_delay
                                 .checked_sub(Duration::from_millis(1))
-                                .unwrap();
+                                .unwrap()
+                                .max(Duration::from_millis(1));
                         }
                     },
                 ),
@@ -161,7 +162,8 @@ fn main() -> Result<(), String> {
                                 .settings
                                 .repeat_interval
                                 .checked_sub(Duration::from_millis(1))
-                                .unwrap();
+                                .unwrap()
+                                .max(Duration::from_millis(1));
                         }
                     },
                 ),
@@ -184,7 +186,31 @@ fn main() -> Result<(), String> {
                                 .settings
                                 .fall_interval
                                 .checked_sub(Duration::from_millis(1))
-                                .unwrap();
+                                .unwrap()
+                                .max(Duration::from_millis(1));
+                        }
+                    },
+                ),
+            },
+            MenuOption::Action {
+                name: "Init level".to_string(),
+                dynamic_value: Some(&|menu_manager| menu_manager.settings.init_level.to_string()),
+                action: InteractionType::Scrollable(
+                    &|menu_manager: &mut MenuManager, increase: bool| {
+                        if increase {
+                            menu_manager.settings.init_level = menu_manager
+                                .settings
+                                .init_level
+                                .checked_add(1)
+                                .unwrap()
+                                .min(10);
+                        } else {
+                            menu_manager.settings.init_level = menu_manager
+                                .settings
+                                .init_level
+                                .checked_sub(1)
+                                .unwrap()
+                                .max(1);
                         }
                     },
                 ),
