@@ -326,7 +326,7 @@ fn init_sdl() -> Result<
 
     let video_subsystem = sdl_context.video()?;
     let mut window = video_subsystem
-        .window("rusty-tetris", WINDOW_WIDTH, WINDOW_HEIGHT)
+        .window("Rustris", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
@@ -336,6 +336,7 @@ fn init_sdl() -> Result<
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
+
     canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
 
     let event_pump = sdl_context.event_pump()?;

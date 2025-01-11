@@ -226,7 +226,7 @@ impl<'a> Game<'a> {
 
         let previous_position = &self.state.previous_position.1;
 
-        if (moved) && self.state.lock_delay.is_in_delay && self.state.lock_delay.moves_done < 15 {
+        if (moved || *previous_position != current_tetromino.position) && self.state.lock_delay.is_in_delay && self.state.lock_delay.moves_done < 15 {
             self.state.lock_delay.moves_done += 1;
             self.state.lock_delay.lock_delay_timer = Instant::now();
             self.state.fall_timer = Instant::now();
@@ -348,16 +348,22 @@ impl<'a> Game<'a> {
                             hard_drop = true;
                         } else if scancode == key_bindings.rotate_clockwise {
                             let current_tetromino = &mut self.state.current_tetromino;
-                            current_tetromino.srs_rotate(false, &self.state.map);
-                            moved = true;
+                            let success = current_tetromino.srs_rotate(false, &self.state.map);
+                            if success {
+                                moved = true;
+                            }
                         } else if scancode == key_bindings.rotate_counter_clockwise {
                             let current_tetromino = &mut self.state.current_tetromino;
-                            current_tetromino.srs_rotate(true, &self.state.map);
-                            moved = true;
+                            let success = current_tetromino.srs_rotate(true, &self.state.map);
+                            if success {
+                                moved = true;
+                            }
                         } else if scancode == key_bindings.rotate_180 {
                             let current_tetromino = &mut self.state.current_tetromino;
-                            current_tetromino.rotate_180(&self.state.map);
-                            moved = true;
+                            let success = current_tetromino.rotate_180(&self.state.map);
+                            if success {
+                                moved = true;
+                            }
                         } else if scancode == key_bindings.hold {
                             switch_hold_tetromino = true;
                         }

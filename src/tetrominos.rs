@@ -130,8 +130,8 @@ impl Tetromino {
 
                 // Define relative offsets for each rotation state
                 let pivot_offsets = [
-                    [0.5, 0.5],  // Rotation state 0
-                    [-0.5, 0.5], // Rotation state 1
+                    [0.5, 0.5],   // Rotation state 0
+                    [-0.5, 0.5],  // Rotation state 1
                     [-0.5, -0.5], // Rotation state 2
                     [0.5, -0.5],  // Rotation state 3
                 ];
@@ -147,7 +147,9 @@ impl Tetromino {
         }
     }
 
-    pub fn srs_rotate(&mut self, clockwise: bool, map: &[[Cell; 10]; 20]) {
+    pub fn srs_rotate(&mut self, clockwise: bool, map: &[[Cell; 10]; 20]) -> bool {
+        let mut success = false;
+
         let wall_kicks: HashMap<(i8, i8), Vec<(i32, i32)>> = HashMap::from([
             ((0, 1), vec![(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)]),
             ((1, 0), vec![(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)]),
@@ -199,7 +201,10 @@ impl Tetromino {
             self.position = rotated.position;
             self.pivot = rotated.pivot;
             self.rotation = rotated.rotation;
+            success = true;
         }
+
+        success
     }
 
     fn get_rotation_state(&self, clockwise: bool) -> (i8, i8) {
@@ -212,9 +217,10 @@ impl Tetromino {
         (current, next)
     }
 
-    pub fn rotate_180(&mut self, map: &[[Cell; 10]; 20]) {
+    pub fn rotate_180(&mut self, map: &[[Cell; 10]; 20]) -> bool {
         self.srs_rotate(true, map);
-        self.srs_rotate(true, map);
+        let success = self.srs_rotate(true, map);
+        success
     }
 }
 
