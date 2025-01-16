@@ -226,7 +226,10 @@ impl<'a> Game<'a> {
 
         let previous_position = &self.state.previous_position.1;
 
-        if (moved || *previous_position != current_tetromino.position) && self.state.lock_delay.is_in_delay && self.state.lock_delay.moves_done < 15 {
+        if (moved || *previous_position != current_tetromino.position)
+            && self.state.lock_delay.is_in_delay
+            && self.state.lock_delay.moves_done < 15
+        {
             self.state.lock_delay.moves_done += 1;
             self.state.lock_delay.lock_delay_timer = Instant::now();
             self.state.fall_timer = Instant::now();
@@ -287,12 +290,11 @@ impl<'a> Game<'a> {
         let now = Instant::now();
 
         let mut moved: bool = false;
-        let mut hard_drop: bool = false;
-        let mut switch_hold_tetromino = false;
 
         let key_bindings = &self.settings.key_bindings;
+        let events: Vec<Event> = self.event_pump.poll_iter().collect();
 
-        for event in self.event_pump.poll_iter() {
+        for event in events {
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -345,7 +347,7 @@ impl<'a> Game<'a> {
                                 key_state.first_press_time = Instant::now();
                             }
                         } else if scancode == key_bindings.hard_drop {
-                            hard_drop = true;
+                            self.hard_drop();
                         } else if scancode == key_bindings.rotate_clockwise {
                             let current_tetromino = &mut self.state.current_tetromino;
                             let success = current_tetromino.srs_rotate(false, &self.state.map);
@@ -365,7 +367,9 @@ impl<'a> Game<'a> {
                                 moved = true;
                             }
                         } else if scancode == key_bindings.hold {
-                            switch_hold_tetromino = true;
+                            self.switch_hold_tetromino();
+                        } else if scancode == key_bindings.quick_reset {
+                            self.quick_reset_game();
                         }
                     }
                 }
@@ -379,14 +383,6 @@ impl<'a> Game<'a> {
                 }
                 _ => {}
             }
-        }
-
-        if hard_drop {
-            self.hard_drop();
-        }
-
-        if switch_hold_tetromino {
-            self.switch_hold_tetromino();
         }
 
         let repeat_delay = self.settings.repeat_delay;
@@ -959,5 +955,31 @@ impl<'a> Game<'a> {
             .expect("Failed to open or create score file");
 
         let _ = file.write_all(csv_line.as_bytes());
+    }
+
+    fn quick_reset_game(&mut self) {
+        // reset all the necesary variables for a quick reset here
+
+        self.state.map = [[Cell {
+            color: None,
+            occupied: false,
+        }; 10]; 20];
+
+        self.state.bag = Bag::new();
+        self.state.current_tetromino = self.state.bag.next_tetromino();
+        self.state.hold = None;
+
+        self.state.game_timer = Instant::now();
+        self.state.score = 0;
+        self.state.lines_cleared = 0;
+        self.state.level = self.settings.init_level;
+
+        // re render everything to clear the screen
+        self.render_map();
+        self.render_time();
+        self.render_score();
+        self.render_current_tetromino();
+        self.render_preview_tetrominos();
+        self.render_lowest_avaliable_tetromino();
     }
 }

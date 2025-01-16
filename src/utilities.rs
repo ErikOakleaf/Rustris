@@ -58,6 +58,7 @@ impl Settings {
             let hard_drop = Scancode::Space;
             let soft_drop = Scancode::Down;
             let hold = Scancode::C;
+            let quick_reset = Scancode::R;
 
             let key_bindings = KeyBindings {
                 move_left,
@@ -68,6 +69,7 @@ impl Settings {
                 hard_drop,
                 soft_drop,
                 hold,
+                quick_reset,
             };
 
             Ok(Self {
@@ -103,7 +105,7 @@ impl Settings {
 
         // save keybinds to txt
         file_path = "settings/keybinds.txt";
-        let scancode_names: [String; 8] = self
+        let scancode_names: [String; 9] = self
             .key_bindings
             .all_scancodes()
             .map(|s| s.name().to_string());
@@ -142,6 +144,7 @@ impl Settings {
             hard_drop: scancodes[5],
             soft_drop: scancodes[6],
             hold: scancodes[7],
+            quick_reset: scancodes[8],
         };
 
         Ok(Settings {
@@ -166,6 +169,7 @@ pub struct KeyBindings {
     pub hard_drop: Scancode,
     pub soft_drop: Scancode,
     pub hold: Scancode,
+    pub quick_reset: Scancode,
 }
 
 impl KeyBindings {
@@ -193,7 +197,7 @@ impl KeyBindings {
             || self.hold == scancode
     }
 
-    pub fn all_scancodes(&self) -> [Scancode; 8] {
+    pub fn all_scancodes(&self) -> [Scancode; 9] {
         [
             self.move_left,
             self.move_right,
@@ -203,6 +207,7 @@ impl KeyBindings {
             self.hard_drop,
             self.soft_drop,
             self.hold,
+            self.quick_reset,
         ]
     }
 }

@@ -318,6 +318,13 @@ fn main() -> Result<(), String> {
                 }),
                 action: InteractionType::Scancode("hold"),
             },
+            MenuOption::Action {
+                name: "Quick Reset".to_string(),
+                dynamic_value: Some(&|menu_manager| {
+                    menu_manager.settings.key_bindings.quick_reset.name().to_string()
+                }),
+                action: InteractionType::Scancode("quick_reset"),
+            },
             MenuOption::Back {
                 name: "Back to Main Menu".to_string(),
             },
