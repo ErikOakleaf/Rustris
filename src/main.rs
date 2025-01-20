@@ -1,10 +1,12 @@
 mod game;
 mod menu;
+mod scoreboard;
 mod tetrominos;
 mod utilities;
 
 use game::Game;
 use menu::{InteractionType, MenuManager, MenuNode, MenuOption};
+use scoreboard::ScoreBoard;
 use sdl2::pixels::Color;
 use std::time::Duration;
 use utilities::{Gamemode, Theme};
@@ -52,6 +54,21 @@ fn main() -> Result<(), String> {
         }
     };
 
+    let show_scoreboard = |menu_manager: &mut MenuManager| {
+        let scoreboard = ScoreBoard::new(
+            &menu_manager.sdl_context,
+            &menu_manager.ttf_context,
+            &mut menu_manager.canvas,
+            &mut menu_manager.event_pump,
+            &menu_manager.theme,
+        );
+
+        match scoreboard {
+            Ok(mut s) => s.run(),
+            Err(e) => println!("Failed to start game: {}", e),
+        }
+    };
+
     // main menu
 
     let main_menu = MenuNode {
@@ -74,6 +91,11 @@ fn main() -> Result<(), String> {
             MenuOption::Submenu {
                 name: "Controls".to_string(),
                 submenu_index: 2,
+            },
+            MenuOption::Action {
+                name: "Scoreboard".to_string(),
+                dynamic_value: None,
+                action: InteractionType::Toggle(&show_scoreboard),
             },
         ],
         parent: None,
@@ -321,7 +343,12 @@ fn main() -> Result<(), String> {
             MenuOption::Action {
                 name: "Quick Reset".to_string(),
                 dynamic_value: Some(&|menu_manager| {
-                    menu_manager.settings.key_bindings.quick_reset.name().to_string()
+                    menu_manager
+                        .settings
+                        .key_bindings
+                        .quick_reset
+                        .name()
+                        .to_string()
                 }),
                 action: InteractionType::Scancode("quick_reset"),
             },

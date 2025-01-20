@@ -477,7 +477,12 @@ impl<'a> Game<'a> {
 
             if pos_y < 0 {
                 self.state.run = false;
-                self.save_score();
+                match self.state.game_mode {
+                    Gamemode::Classic => {
+                        self.save_score();
+                    }
+                    _ => {}
+                }
                 return;
             }
 
@@ -563,7 +568,13 @@ impl<'a> Game<'a> {
     }
 
     fn set_level(&mut self) {
-        self.state.level = ((self.state.lines_cleared / 10) + 1).max(self.settings.init_level);
+        match self.state.game_mode {
+            Gamemode::Classic => {
+                self.state.level =
+                    ((self.state.lines_cleared / 10) + 1).max(self.settings.init_level);
+            }
+            _ => {}
+        }
     }
 
     fn get_first_full_line(&self) -> Option<usize> {
