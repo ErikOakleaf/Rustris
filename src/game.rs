@@ -961,7 +961,7 @@ impl<'a> Game<'a> {
         let csv_line = format!("{},{},{}\n", timestamp, game_mode, score);
 
         // read existing content
-        let content = fs::read_to_string(&file_path).unwrap();
+        let content = fs::read_to_string(&file_path).unwrap_or("".to_string());
         // prepend the new line to the existing content
         let new_content = csv_line + &content;
 
