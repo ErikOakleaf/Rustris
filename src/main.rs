@@ -56,7 +56,6 @@ fn main() -> Result<(), String> {
 
     let show_scoreboard = |menu_manager: &mut MenuManager| {
         let scoreboard = ScoreBoard::new(
-            &menu_manager.sdl_context,
             &menu_manager.ttf_context,
             &mut menu_manager.canvas,
             &mut menu_manager.event_pump,

@@ -9,8 +9,7 @@ use sdl2::event::Event;
 use sdl2::keyboard::Scancode;
 use sdl2::rect::Rect;
 use std::collections::HashMap;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs::{self};
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -938,6 +937,8 @@ impl<'a> Game<'a> {
         Duration::from_secs_f64(fall_seconds)
     }
 
+    // prepend to the score to the score file
+
     fn save_score(&self) {
         let _ = fs::create_dir_all("score");
 
@@ -959,13 +960,13 @@ impl<'a> Game<'a> {
 
         let csv_line = format!("{},{},{}\n", timestamp, game_mode, score);
 
-        let mut file = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(file_path)
-            .expect("Failed to open or create score file");
+        // read existing content
+        let content = fs::read_to_string(&file_path).unwrap();
+        // prepend the new line to the existing content
+        let new_content = csv_line + &content;
 
-        let _ = file.write_all(csv_line.as_bytes());
+        // write to file
+        fs::write(&file_path, new_content).unwrap();
     }
 
     fn quick_reset_game(&mut self) {

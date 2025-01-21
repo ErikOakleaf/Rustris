@@ -1,7 +1,8 @@
 use std::{
     fs::File,
-    io::{self, BufRead, BufReader},
+    io::{self, BufRead},
     path::Path,
+    usize,
 };
 
 use sdl2::{event::Event, keyboard::Scancode};
@@ -9,7 +10,6 @@ use sdl2::{event::Event, keyboard::Scancode};
 use crate::utilities::{render_bg, render_text, Theme};
 
 pub struct ScoreBoard<'a> {
-    sdl_context: &'a sdl2::Sdl,
     font: sdl2::ttf::Font<'a, 'static>,
     canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
     event_pump: &'a mut sdl2::EventPump,
@@ -22,7 +22,6 @@ impl<'a> ScoreBoard<'a> {
     const GRID_HEIGHT: u32 = 20;
 
     pub fn new(
-        sdl_context: &'a sdl2::Sdl,
         ttf_context: &'a sdl2::ttf::Sdl2TtfContext,
         canvas: &'a mut sdl2::render::Canvas<sdl2::video::Window>,
         event_pump: &'a mut sdl2::EventPump,
@@ -32,7 +31,6 @@ impl<'a> ScoreBoard<'a> {
         let font = ttf_context.load_font(font_path, 22)?;
 
         Ok(Self {
-            sdl_context,
             font,
             canvas,
             event_pump,
@@ -42,20 +40,20 @@ impl<'a> ScoreBoard<'a> {
 
     // function for loading ten scors at a time in chronological order
 
-    fn load_scores(part: usize, gamemode: u8) -> Vec<String> {
+    fn load_scores(part: usize, gamemode: u8, out_of_range: bool) -> (Vec<String>, bool) {
         let path = match gamemode {
             0 => Path::new("score/classic.csv"),
 
             1 => Path::new("score/lines40.csv"),
 
-            _ => return vec![],
+            _ => return (vec![], false),
         };
 
         let mut scores = Vec::new();
 
         let file = match File::open(&path) {
             Ok(file) => file,
-            Err(_) => return scores,
+            Err(_) => return (scores, false),
         };
 
         let mut buf_reader = io::BufReader::new(file);
@@ -86,34 +84,13 @@ impl<'a> ScoreBoard<'a> {
         // if the part that is supose to be loaded is out of range
 
         if scores.is_empty() && current_line > 0 {
-            let last_start = if current_line > 10 {
-                current_line - 10
-            } else {
-                0
-            };
-
-            buf_reader = io::BufReader::new(File::open(&path).unwrap()); // Reopen file to iterate
-                                                                         // again
-            current_line = 0;
-
-            while let Ok(bytes_read) = buf_reader.read_line(&mut line) {
-                if bytes_read == 0 {
-                    break;
-                }
-
-                if current_line >= last_start {
-                    scores.push(line.trim().to_string());
-                }
-
-                line.clear();
-                current_line += 1;
-            }
+            return Self::load_scores(part.saturating_sub(1), gamemode, true);
         }
 
-        scores
+        (scores, out_of_range)
     }
 
-    fn render_scoreboard(&mut self, part: usize, gamemode: u8) {
+    fn render_scoreboard(&mut self, part: usize, gamemode: u8) -> bool {
         render_bg(
             self.canvas,
             self.theme.bg_color_1,
@@ -127,7 +104,7 @@ impl<'a> ScoreBoard<'a> {
         let header_string = match gamemode {
             0 => "Classic".to_string(),
             1 => "40 Lines".to_string(),
-            _ => return,
+            _ => return false,
         };
 
         let _ = render_text(
@@ -139,12 +116,12 @@ impl<'a> ScoreBoard<'a> {
             20,
         );
 
-        let scores = Self::load_scores(part, gamemode);
+        let scores = Self::load_scores(part, gamemode, false);
 
         let mut render_y = 100;
         let render_x = 320;
 
-        for score in scores.iter() {
+        for score in scores.0.iter() {
             let parts: Vec<&str> = score.split(",").collect();
 
             let print_string = format!(
@@ -168,11 +145,12 @@ impl<'a> ScoreBoard<'a> {
 
             render_y += 50;
         }
+        scores.1
     }
 
     pub fn run(&mut self) {
         let mut current_scoreboard = 0;
-        let mut current_part = 1;
+        let mut current_part: usize = 1;
         self.render_scoreboard(current_part, current_scoreboard);
 
         'running: loop {
@@ -197,6 +175,23 @@ impl<'a> ScoreBoard<'a> {
                         ..
                     } => {
                         current_scoreboard = current_scoreboard.saturating_sub(1).clamp(0, 1);
+                        self.render_scoreboard(current_part, current_scoreboard);
+                    }
+                    Event::KeyDown {
+                        scancode: Some(Scancode::Right),
+                        ..
+                    } => {
+                        current_part += 1;
+                        let out_of_range = self.render_scoreboard(current_part, current_scoreboard);
+                        if out_of_range {
+                            current_part -= 1;
+                        }
+                    }
+                    Event::KeyDown {
+                        scancode: Some(Scancode::Left),
+                        ..
+                    } => {
+                        current_part = current_part.saturating_sub(1).clamp(1, usize::MAX);
                         self.render_scoreboard(current_part, current_scoreboard);
                     }
                     _ => {}
